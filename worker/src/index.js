@@ -4,18 +4,24 @@
  * Geheimnisse liegen NUR bei Cloudflare (wrangler secret put …), nie im Code:
  *   ICAL_URL    – private iCal-Adresse des Google-Kalenders
  *   ACCESS_KEY  – Zugangsschlüssel, der auf dem Tablet eingetragen wird
+ *   AHA_ADRESSE – Adresse für die Müllabfuhr, z. B. "Musterweg 5" oder "Musterweg 5a, Ahlten"
  *
- * GET /calendar?days=7  (Header: Authorization: Bearer <ACCESS_KEY>)
- * → nur Titel und Zeiten der Termine im Zeitraum, keine Beschreibungen,
- *   Orte oder Teilnehmer. Nur lesen, nie schreiben.
+ * Alle Abfragen brauchen den Header  Authorization: Bearer <ACCESS_KEY>
+ * GET /calendar?days=7 → nur Titel und Zeiten der Termine im Zeitraum, keine
+ *   Beschreibungen, Orte oder Teilnehmer. Nur lesen, nie schreiben.
+ * GET /trash → nächste Abholtermine je Tonne (aha Region Hannover, Gemeinde Lehrte).
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
 const TZ = 'Europe/Berlin';
 const CACHE_MS = 10 * 60 * 1000;
+const AHA_URL = 'https://www.aha-region.de/abholtermine/abfuhrkalender';
+const AHA_GEMEINDE = 'Lehrte';
+const TRASH_CACHE_MS = 6 * 60 * 60 * 1000;
 const DAY = 86400000;
 
-let memo = null; // { at, days, dayKey, body } – Zwischenspeicher je Instanz
+let memo = null;      // { at, days, dayKey, body } – Zwischenspeicher je Instanz
+let trashMemo = null; // { at, addr, dayKey, body }
 
 export default {
   async fetch(request, env) {
@@ -35,12 +41,15 @@ export default {
     if (request.method !== 'GET') return reply(405, { error: 'method' });
 
     const url = new URL(request.url);
-    if (url.pathname !== '/calendar') return reply(404, { error: 'not found' });
+    if (url.pathname !== '/calendar' && url.pathname !== '/trash') return reply(404, { error: 'not found' });
 
-    if (!env.ACCESS_KEY || !env.ICAL_URL) return reply(500, { error: 'not configured' });
+    if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
     const auth = request.headers.get('Authorization') || '';
     const given = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
     if (!given || !(await sameSecret(given, env.ACCESS_KEY))) return reply(401, { error: 'unauthorized' });
+
+    if (url.pathname === '/trash') return trash(env, reply);
+    if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
 
     const days = Math.min(14, Math.max(1, parseInt(url.searchParams.get('days') || '7', 10) || 7));
     const todayW = startOfDayW(utcToWall(Date.now(), TZ));
@@ -269,5 +278,65 @@ function expand(events, from, to) {
     }
   }
   out.sort((a, b) => (a.start + (a.allDay ? '0' : '1') + (a.startTime || '')).localeCompare(b.start + (b.allDay ? '0' : '1') + (b.startTime || '')));
+  return out;
+}
+
+/* ---------- Müllabfuhr (aha) ---------- */
+async function trash(env, reply) {
+  if (!env.AHA_ADRESSE) return reply(500, { error: 'not configured' });
+  const dayKey = fmtDate(utcToWall(Date.now(), TZ));
+  if (trashMemo && trashMemo.addr === env.AHA_ADRESSE && trashMemo.dayKey === dayKey && Date.now() - trashMemo.at < TRASH_CACHE_MS) return reply(200, trashMemo.body);
+
+  const addr = parseAddress(env.AHA_ADRESSE);
+  if (!addr) return reply(422, { error: 'address' });
+  let html;
+  try {
+    const list = await ahaPost({ gemeinde: AHA_GEMEINDE, aktuelle_gemeinde: AHA_GEMEINDE, von: addr.letter });
+    const opts = [...list.matchAll(/<option value='(\d+@[^']*)'/g)].map(m => m[1]);
+    const hits = opts.filter(o => norm(o.split('@')[1].split(' / ')[0]) === norm(addr.street));
+    const pick = hits.length > 1 && addr.ortsteil ? hits.filter(o => norm(o.split('@')[2] || '') === norm(addr.ortsteil)) : hits;
+    if (pick.length === 0) return reply(422, { error: hits.length ? 'ortsteil' : 'street' });
+    if (pick.length > 1) return reply(422, { error: 'ambiguous', ortsteile: pick.map(o => o.split('@')[2] || '') });
+    html = await ahaPost({ gemeinde: AHA_GEMEINDE, aktuelle_gemeinde: AHA_GEMEINDE, von: addr.letter, strasse: pick[0], hausnr: addr.nr, hausnraddon: addr.addon, anzeigen: 'Suchen' });
+  } catch (e) {
+    return reply(502, { error: 'aha unreachable' });
+  }
+  const bins = parseTrash(html);
+  if (!bins.length) return reply(422, { error: 'housenumber' });
+  const body = { updated: new Date().toISOString(), bins };
+  trashMemo = { at: Date.now(), addr: env.AHA_ADRESSE, dayKey, body };
+  return reply(200, body);
+}
+async function ahaPost(fields) {
+  const r = await fetch(AHA_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Mozilla/5.0 (wand-dashboard)' },
+    body: new URLSearchParams(fields).toString(),
+  });
+  if (!r.ok) throw new Error('status ' + r.status);
+  return r.text();
+}
+function norm(s) {
+  return s.toLowerCase().replace(/stra(ss|ß)e\b/g, 'str.').replace(/str\b(?!\.)/g, 'str.').replace(/\s+/g, ' ').trim();
+}
+// "Musterweg 5a, Ahlten" → { street, nr, addon, ortsteil, letter }
+function parseAddress(s) {
+  const [main, ortsteil = ''] = s.split(',').map(x => x.trim());
+  const m = /^(.+?)\s+(\d+)\s*([a-zA-Z]?)$/.exec(main || '');
+  if (!m) return null;
+  const first = m[1][0].toUpperCase();
+  return { street: m[1], nr: m[2], addon: m[3], ortsteil, letter: { 'Ä': 'A', 'Ö': 'O', 'Ü': 'U' }[first] || first };
+}
+function parseTrash(html) {
+  const t = html.indexOf('table-abfuhr');
+  if (t < 0) return [];
+  const table = html.slice(t, html.indexOf('</table>', t));
+  const out = [];
+  const parts = table.split(/<strong>/).slice(1);
+  for (const part of parts) {
+    const name = part.slice(0, part.indexOf('</strong>')).trim();
+    const dates = [...part.matchAll(/(\d{2})\.(\d{2})\.(\d{4})/g)].map(m => m[3] + '-' + m[2] + '-' + m[1]);
+    if (name && dates.length) out.push({ type: name, dates });
+  }
   return out;
 }

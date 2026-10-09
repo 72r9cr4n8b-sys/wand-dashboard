@@ -55,7 +55,13 @@ button{font-family:var(--body)}
 .col{display:grid;grid-row-gap:18px;min-height:0}
 .evt{display:flex;align-items:center;background:var(--tile2);border-radius:16px;padding:12px 18px;margin-top:10px}
 .evt .bar{width:10px;height:36px;border-radius:6px;margin-right:16px}
-#trash{background:var(--yellow);color:#2A2208;display:flex;align-items:center;padding:16px 22px}
+#trash{background:var(--tile2);color:var(--fg);display:flex;align-items:center;padding:16px 22px;border:0;width:100%;text-align:left;cursor:pointer;border-radius:28px;font-family:var(--body)}
+.bins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:18px;min-height:0}
+.bin{border-radius:28px;padding:22px 26px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.bin .nm{font-family:var(--display);font-size:32px;margin-bottom:6px}
+.bin .ln{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:600;padding:8px 0;border-top:1px solid rgba(255,255,255,.18)}
+.bin .ln.dark{border-top-color:rgba(0,0,0,.18)}
+.bin .ln small{font-size:16px;font-weight:700;opacity:.8}
 #meterTile{background:#3A2A1E;display:flex;align-items:center;padding:16px 22px;border:0;color:var(--fg);text-align:left;cursor:pointer;width:100%;border-radius:28px}
 .round{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:16px}
 
@@ -193,10 +199,10 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
       <div id="calHome"><div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">Kalender wird geladen …</div></div></div>
     </div>
     <div class="col" style="grid-template-rows:1fr 1fr">
-      <div id="trash" class="card">
-        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:16px;flex-shrink:0"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg>
-        <div><div style="font-size:15px;font-weight:700">Müllabfuhr</div><div style="font-family:var(--display);font-size:24px">Termine folgen</div></div>
-      </div>
+      <button id="trash" type="button" data-go="muell">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:16px;flex-shrink:0"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg>
+        <span style="min-width:0"><span id="trashWhen" style="display:block;font-size:15px;font-weight:700">Müllabfuhr</span><span id="trashWhat" style="display:block;font-family:var(--display);font-size:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">wird geladen …</span></span>
+      </button>
       <button id="meterTile" type="button" data-go="verbrauch">
         <span class="round" style="background:var(--orange)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
         <span><span id="meterWhen" style="display:block;font-size:15px;font-weight:700;color:#F7BE98">&nbsp;</span><span style="display:block;font-family:var(--display);font-size:24px">Zähler ablesen</span></span>
@@ -259,6 +265,16 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   <div id="calWeek" class="week"></div>
 </section>
 
+<!-- ===== Müllabfuhr ===== -->
+<section id="muell" class="view sub" aria-label="Müllabfuhr" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Müllabfuhr</div>
+    <div class="chip" id="trashUpdated">&nbsp;</div>
+  </div>
+  <div id="binGrid" class="bins"></div>
+</section>
+
 <!-- ===== Einstellungen ===== -->
 <section id="einstellungen" class="view sub" aria-label="Einstellungen" hidden>
   <div class="subhead">
@@ -267,7 +283,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     <div style="width:140px"></div>
   </div>
   <div class="card settings">
-    <div style="font-family:var(--display);font-size:28px">Kalender-Zugang</div>
+    <div style="font-family:var(--display);font-size:28px">Zugang für Kalender &amp; Müllabfuhr</div>
     <p>Der Zugangsschlüssel wird nur auf diesem Tablet gespeichert. Ohne ihn zeigt das Dashboard keine Termine an.</p>
     <p id="keyState" style="color:var(--fg);font-weight:700"></p>
     <input id="inKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Zugangsschlüssel eingeben" aria-label="Zugangsschlüssel">
@@ -302,7 +318,11 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   var WX_MS = 15 * 60 * 1000;         // Wetter alle 15 Minuten
   var RELOAD_MS = 6 * 60 * 60 * 1000; // Seite alle 6 Stunden neu laden (für Updates)
   var STORE_KEY = 'wanddash.readings.v1';
-  var CAL_URL = 'https://wand-dashboard.wanddash-5cqf4.workers.dev/calendar?days=7'; // Vermittler (Cloudflare Worker), enthält keine Geheimnisse
+  var API = 'https://wand-dashboard.wanddash-5cqf4.workers.dev'; // Vermittler (Cloudflare Worker), enthält keine Geheimnisse
+  var CAL_URL = API + '/calendar?days=7';
+  var TRASH_URL = API + '/trash';
+  var TRASH_KEY = 'wanddash.trash.v1';
+  var TRASH_MS = 3 * 60 * 60 * 1000;  // Müllabfuhr alle 3 Stunden
   var CAL_KEY = 'wanddash.calkey.v1';
   var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
 
@@ -323,10 +343,11 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   /* ---------- Ansichten ---------- */
   var idleTimer = null;
   function show(id, name){
-    ['home','verbrauch','kalender','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
+    ['home','verbrauch','kalender','muell','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
     if (id === 'verbrauch') renderMeter();
     if (id === 'kalender') renderCalendar();
+    if (id === 'muell') renderTrash();
     if (id === 'einstellungen') openSettings();
     resetIdle();
   }
@@ -382,6 +403,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     paintSky(skyPhase(now));
     meterHint(now);
     if (calDay !== dayKey(now)) renderCalendar();
+    if (trashHour !== dayKey(now) + now.getHours()) renderTrash();
   }
   function meterHint(now){
     var next = new Date(now.getFullYear(), now.getMonth(), METER_DAY);
@@ -609,7 +631,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -624,9 +646,87 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (!confirmKeyDel){ confirmKeyDel = true; this.textContent = 'Wirklich entfernen? Nochmal tippen'; return; }
     confirmKeyDel = false; this.textContent = 'Schlüssel entfernen';
     setKey(''); calData = null; calError = 'nokey'; renderCalendar(); openSettingsState();
+    trashData = null; trashError = 'nokey'; try { localStorage.removeItem(TRASH_KEY); } catch (e) {} renderTrash();
     $('setMsg').textContent = 'Schlüssel entfernt.';
   });
   fetchCalendar(); setInterval(fetchCalendar, CAL_MS);
+
+  /* ---------- Müllabfuhr (aha, über den Vermittler) ---------- */
+  var BINS = {
+    Restabfall:         { name: 'Restmüll',    bg: '#4A505E', fg: '#F4F1EA' },
+    Bioabfall:          { name: 'Biotonne',    bg: '#7A5634', fg: '#FFF1E0' },
+    Papier:             { name: 'Papier',      bg: '#3A6BB0', fg: '#F2F7FF' },
+    Leichtverpackungen: { name: 'Gelbe Tonne', bg: '#F2C94C', fg: '#2A2208', dark: true }
+  };
+  var trashData = null, trashError = '', trashHour = '';
+  try { trashData = JSON.parse(localStorage.getItem(TRASH_KEY) || 'null'); } catch (e) { trashData = null; }
+  function binInfo(type){ return BINS[type] || { name: type, bg: '#3B4566', fg: '#F4F1EA' }; }
+  function parseDay(k){ var p = k.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function daysUntil(k, now){ return Math.round((parseDay(k) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000); }
+  // Heute abgeholte Tonnen gelten ab 12 Uhr als erledigt
+  function upcoming(dates, now){
+    return dates.filter(function(k){ var n = daysUntil(k, now); return n > 0 || (n === 0 && now.getHours() < 12); });
+  }
+  function whenLabel(k, now){
+    var n = daysUntil(k, now), d = parseDay(k);
+    if (n === 0) return 'Heute';
+    if (n === 1) return 'Morgen';
+    return DAYS_SHORT[d.getDay()] + ', ' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()];
+  }
+  function fetchTrash(){
+    var key = getKey();
+    if (!key){ trashError = 'nokey'; renderTrash(); return; }
+    fetch(TRASH_URL, { headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' }).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (r.status === 422) throw new Error('address');
+      if (r.status === 500) throw new Error('setup');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    }).then(function(d){
+      trashData = d; trashError = '';
+      try { localStorage.setItem(TRASH_KEY, JSON.stringify(d)); } catch (e) {}
+      renderTrash();
+    }).catch(function(err){
+      trashError = (err && err.message) || 'net';
+      if (trashError !== 'net') trashData = null;
+      renderTrash();
+    });
+  }
+  function setTile(bg, fg, when, what){
+    var t = $('trash'); t.style.background = bg; t.style.color = fg;
+    $('trashWhen').textContent = when; $('trashWhat').textContent = what;
+  }
+  function renderTrash(){
+    var now = new Date();
+    trashHour = dayKey(now) + now.getHours();
+    var bins = trashData ? trashData.bins.map(function(b){ return { type: b.type, dates: upcoming(b.dates, now) }; }) : [];
+    var next = null;
+    bins.forEach(function(b){ if (b.dates.length && (!next || b.dates[0] < next)) next = b.dates[0]; });
+    if (!next){
+      var msg = trashError === 'nokey' ? 'Noch nicht verbunden' : trashError === 'auth' ? 'Schlüssel stimmt nicht' :
+        trashError === 'setup' ? 'Adresse fehlt noch' : trashError === 'address' ? 'Adresse nicht gefunden' :
+        trashError === 'net' ? 'Nicht erreichbar' : trashData ? 'Keine Termine' : 'wird geladen …';
+      setTile('var(--tile2)', 'var(--fg)', 'Müllabfuhr', msg);
+    } else {
+      var due = bins.filter(function(b){ return b.dates[0] === next; });
+      var first = binInfo(due[0].type), n = daysUntil(next, now);
+      setTile(first.bg, first.fg, n === 1 ? 'Morgen rausstellen' : n === 0 ? 'Heute Abholung' : whenLabel(next, now) + ' · in ' + n + ' Tagen',
+        due.map(function(b){ return binInfo(b.type).name; }).join(' + '));
+    }
+    // Detailansicht
+    $('binGrid').innerHTML = !bins.length ? '<div class="bin" style="background:var(--tile)"><div class="nm">' + esc($('trashWhat').textContent) + '</div>' +
+      '<div class="ln"><span>' + (trashError === 'address' ? 'Bitte die hinterlegte Adresse prüfen.' : trashError === 'setup' ? 'Die Adresse muss noch beim Vermittler hinterlegt werden.' : 'Die Termine erscheinen, sobald die Verbindung steht.') + '</span></div></div>' : bins.map(function(b){
+      var c = binInfo(b.type);
+      return '<div class="bin" style="background:' + c.bg + ';color:' + c.fg + '"><div class="nm">' + esc(c.name) + '</div>' +
+        (b.dates.length ? b.dates.map(function(k){
+          var n = daysUntil(k, now);
+          return '<div class="ln' + (c.dark ? ' dark' : '') + '"><span>' + esc(whenLabel(k, now)) + '</span><small>' + (n === 0 ? 'heute' : n === 1 ? 'morgen' : 'in ' + n + ' Tagen') + '</small></div>';
+        }).join('') : '<div class="ln' + (c.dark ? ' dark' : '') + '"><span>Keine Termine bekannt</span></div>') + '</div>';
+    }).join('');
+    var up = trashData ? new Date(trashData.updated) : null;
+    $('trashUpdated').textContent = up ? (trashError === 'net' ? 'Stand ' : 'Aktualisiert ') + up.getDate() + '. ' + MONTHS_SHORT[up.getMonth()] + ' ' + pad(up.getHours()) + ':' + pad(up.getMinutes()) : 'Nicht verbunden';
+  }
+  renderTrash(); fetchTrash(); setInterval(fetchTrash, TRASH_MS);
 
   /* ---------- Bildschirm wach halten, regelmäßig neu laden ---------- */
   function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }
