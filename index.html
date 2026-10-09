@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wand-Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: fester 1280×800-Rahmen, der auf jede Tablet-Auflösung skaliert wird */
+:root{
+  --bg:#0D1322; --tile:#1A2238; --tile2:#232C47; --sky:#1D2B4A; --sky2:#26365A;
+  --fg:#F4F1EA; --muted:#9FB4DB; --soft:#C9D4EA;
+  --sun:#FFD27A; --orange:#F29E6B; --blue:#8DB8F2; --violet:#C3A6F2; --teal:#6FD3B8; --yellow:#F2C94C;
+  --display:'Outfit', 'Helvetica Neue', sans-serif; --body:'Nunito Sans', 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden}
+*{box-sizing:border-box}
+button{font-family:var(--body)}
+#stage{position:absolute;left:0;top:0;width:1280px;height:800px;transform-origin:0 0;padding:28px 32px 24px}
+.view{position:absolute;top:28px;left:32px;right:32px;bottom:24px;display:grid;grid-row-gap:18px}
+.view[hidden]{display:none!important}
+#home{grid-template-rows:400px 1fr 62px}
+.row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-gap:18px;min-height:0}
+.span2{grid-column:span 2}
+.card{background:var(--tile);border-radius:28px;padding:22px 26px;min-height:0;overflow:hidden}
+.label{font-size:16px;font-weight:700;color:var(--muted)}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
+
+/* Hero mit Himmel */
+#hero{position:relative;border-radius:28px;overflow:hidden;background:#22305A}
+#hero svg.skyart{position:absolute;left:0;top:0;width:100%;height:100%}
+#hero .content{position:relative;height:100%;padding:34px 40px;display:flex;flex-direction:column;justify-content:space-between}
+#greet{font-size:22px;font-weight:600;color:#E6E1F2}
+#clock{font-family:var(--display);font-size:150px;font-weight:300;line-height:.95;letter-spacing:-3px;color:#fff}
+#date{font-family:var(--display);font-size:28px;color:#fff}
+.pills{display:flex}
+.pill{background:var(--bg);border-radius:999px;padding:10px 18px;font-size:17px;font-weight:600;margin-right:12px;color:#fff}
+
+/* Wetter */
+#wx{background:var(--sky);display:flex;flex-direction:column;justify-content:space-between}
+.wxtop{display:flex;justify-content:space-between;align-items:center}
+#wxTemp{font-size:68px;font-weight:300;line-height:1}
+#wxText{font-size:18px;color:var(--soft)}
+.days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-gap:8px}
+.day{background:var(--sky2);border-radius:14px;padding:8px 0;text-align:center}
+.day .d{font-size:14px;color:var(--muted)}
+.day .t{font-size:17px;font-weight:700}
+.day svg{width:26px;height:26px;display:block;margin:2px auto}
+
+#indoor{background:#1E3A3A;display:flex;align-items:center;padding:18px 24px}
+#indoor .txt{margin-left:18px}
+
+.col{display:grid;grid-row-gap:18px;min-height:0}
+.evt{display:flex;align-items:center;background:var(--tile2);border-radius:16px;padding:12px 18px;margin-top:10px}
+.evt .bar{width:10px;height:36px;border-radius:6px;margin-right:16px}
+#trash{background:var(--yellow);color:#2A2208;display:flex;align-items:center;padding:16px 22px}
+#meterTile{background:#3A2A1E;display:flex;align-items:center;padding:16px 22px;border:0;color:var(--fg);text-align:left;cursor:pointer;width:100%;border-radius:28px}
+.round{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:16px}
+
+/* Navigation */
+nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px}
+nav button{background:var(--tile);border:0;border-radius:999px;height:62px;display:flex;align-items:center;padding:0 10px;font-size:18px;font-weight:700;color:var(--fg);cursor:pointer}
+nav button .round{width:44px;height:44px;margin-right:12px}
+button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+
+/* Unterseiten */
+.sub{grid-template-rows:56px 1fr}
+.subhead{display:flex;justify-content:space-between;align-items:center}
+.back{display:flex;align-items:center;height:56px;padding:0 22px 0 8px;background:var(--tile);border:0;border-radius:999px;font-size:18px;font-weight:700;color:var(--fg);cursor:pointer}
+.back .round{width:42px;height:42px;background:var(--tile2);margin-right:12px}
+.subtitle{font-family:var(--display);font-size:36px}
+.chip{background:var(--tile);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:700;color:var(--muted)}
+
+.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:18px;align-items:end;height:170px;margin-top:10px}
+.barcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.barcol .v{font-family:var(--display);font-size:17px;margin-bottom:6px}
+.barcol .b{width:100%;border-radius:14px}
+.barcol .m{font-size:15px;font-weight:600;margin-top:6px}
+.empty{height:170px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:18px;color:var(--soft);padding:0 30px}
+
+form.entry{background:var(--yellow);color:#2A2208;border-radius:28px;padding:22px 26px;display:flex;flex-direction:column}
+form.entry label{display:flex;flex-direction:column;font-size:16px;font-weight:700;margin-top:12px}
+form.entry input{height:54px;border-radius:16px;border:0;background:#FFF6D9;color:#2A2208;font-size:20px;padding:0 16px;font-family:var(--display);margin-top:6px}
+form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;background:#2A2208;color:#FFF6D9;font-size:19px;font-weight:700;cursor:pointer}
+#formMsg{font-size:15px;font-weight:700;min-height:20px;margin-top:8px}
+.list{font-size:17px}
+.list .line{display:flex;justify-content:space-between;background:var(--tile2);border-radius:14px;padding:10px 14px;margin-top:8px}
+.ghost{background:var(--tile2);border:0;color:var(--fg);border-radius:999px;padding:10px 16px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
+.soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- ===== Startbildschirm ===== -->
+<section id="home" class="view" aria-label="Startbildschirm">
+  <div class="row">
+    <div id="hero" class="span2">
+      <svg class="skyart" viewBox="0 0 820 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop id="s1" offset="0" stop-color="#1E2A55"></stop>
+            <stop id="s2" offset="0.55" stop-color="#5B4F86"></stop>
+            <stop id="s3" offset="1" stop-color="#F29E6B"></stop>
+          </linearGradient>
+          <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#FFD27A" stop-opacity="0.55"></stop>
+            <stop offset="1" stop-color="#FFD27A" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="820" height="400" fill="url(#skyGrad)"></rect>
+        <g id="stars" fill="#FFFFFF" opacity="0.7">
+          <circle cx="120" cy="40" r="1.4"></circle><circle cx="300" cy="70" r="1.1"></circle><circle cx="420" cy="30" r="1.3"></circle><circle cx="760" cy="50" r="1.2"></circle><circle cx="650" cy="90" r="1"></circle><circle cx="220" cy="120" r="1"></circle><circle cx="540" cy="60" r="1.2"></circle>
+        </g>
+        <g id="orb">
+          <circle id="orbGlow" cx="640" cy="300" r="170" fill="url(#glow)"></circle>
+          <circle id="orbBody" cx="640" cy="300" r="58" fill="#FFD27A"></circle>
+        </g>
+        <g fill="#FFFFFF" opacity="0.18">
+          <ellipse cx="520" cy="150" rx="90" ry="18"></ellipse><ellipse cx="575" cy="135" rx="55" ry="16"></ellipse><ellipse cx="730" cy="210" rx="70" ry="12"></ellipse>
+        </g>
+        <path id="hill1" d="M0 330 C 140 280 260 300 380 320 S 640 290 820 310 V400 H0Z" fill="#3A3566"></path>
+        <path id="hill2" d="M0 360 C 180 330 330 350 470 365 S 700 340 820 355 V400 H0Z" fill="#232447"></path>
+      </svg>
+      <div class="content">
+        <div>
+          <div id="greet">Hallo</div>
+          <div id="clock" class="num">--:--</div>
+          <div id="date">&nbsp;</div>
+        </div>
+        <div class="pills">
+          <div class="pill">Sonnenaufgang <span id="sunrise" class="num">--:--</span></div>
+          <div class="pill">Untergang <span id="sunset" class="num">--:--</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col" style="grid-template-rows:1fr auto">
+      <div id="wx" class="card">
+        <div class="wxtop">
+          <div>
+            <div class="label">Lehrte</div>
+            <div id="wxTemp" class="num">--°</div>
+            <div id="wxText">Wetter wird geladen …</div>
+          </div>
+          <div id="wxIcon" style="width:84px;height:84px"></div>
+        </div>
+        <div id="days" class="days"></div>
+      </div>
+      <div id="indoor" class="card">
+        <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="31" fill="none" stroke="#2D5552" stroke-width="8"></circle><circle id="humRing" cx="38" cy="38" r="31" fill="none" stroke="#6FD3B8" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 195" transform="rotate(-90 38 38)"></circle><text id="humText" x="38" y="44" text-anchor="middle" font-family="Outfit, sans-serif" font-size="17" fill="#F4F1EA">–</text></svg>
+        <div class="txt">
+          <div class="label" style="color:#8FD9C3">Innen</div>
+          <div id="inTemp" class="num" style="font-size:44px;line-height:1.05">--°</div>
+          <div style="font-size:15px;color:#BFD9D2">Govee folgt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card span2">
+      <div class="label" style="color:#C3B2F0">Heute &amp; morgen</div>
+      <div class="evt"><div class="bar" style="background:var(--violet)"></div><div style="font-size:20px;font-weight:600">Kalender wird noch verbunden</div></div>
+      <div class="evt"><div class="bar" style="background:var(--orange)"></div><div style="font-size:20px;color:var(--soft)">Hier erscheinen dann deine Termine</div></div>
+    </div>
+    <div class="col" style="grid-template-rows:1fr 1fr">
+      <div id="trash" class="card">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:16px;flex-shrink:0"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg>
+        <div><div style="font-size:15px;font-weight:700">Müllabfuhr</div><div style="font-family:var(--display);font-size:24px">Termine folgen</div></div>
+      </div>
+      <button id="meterTile" type="button" data-go="verbrauch">
+        <span class="round" style="background:var(--orange)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
+        <span><span id="meterWhen" style="display:block;font-size:15px;font-weight:700;color:#F7BE98">&nbsp;</span><span style="display:block;font-family:var(--display);font-size:24px">Zähler ablesen</span></span>
+      </button>
+    </div>
+  </div>
+
+  <nav aria-label="Bereiche">
+    <button type="button" data-go="verbrauch"><span class="round" style="background:var(--orange)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7"></path></svg></span>Verbrauch</button>
+    <button type="button" data-go="soon" data-name="Wetter"><span class="round" style="background:var(--blue)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19 11a3.5 3.5 0 0 1 0 7z"></path></svg></span>Wetter</button>
+    <button type="button" data-go="soon" data-name="Einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf</button>
+    <button type="button" data-go="soon" data-name="Essensplan"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
+    <button type="button" data-go="soon" data-name="Kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
+    <button type="button" data-go="soon" data-name="Pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand</button>
+  </nav>
+</section>
+
+<!-- ===== Verbrauch ===== -->
+<section id="verbrauch" class="view sub" aria-label="Verbrauch" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Strom &amp; Gas</div>
+    <div class="chip" id="entryCount">0 Ablesungen</div>
+  </div>
+  <div class="row">
+    <div class="col span2" style="grid-template-rows:1fr 1fr">
+      <div class="card" style="background:#2E2219">
+        <div class="label" style="color:#F7BE98">Strom · kWh pro Zeitraum</div>
+        <div id="chartStrom"></div>
+      </div>
+      <div class="card" style="background:#172A45">
+        <div class="label" style="color:#B6CFF2">Gas · m³ pro Zeitraum</div>
+        <div id="chartGas"></div>
+      </div>
+    </div>
+    <div class="col" style="grid-template-rows:auto 1fr">
+      <div class="card">
+        <div class="label" style="color:#C3B2F0">Letzte Ablesungen</div>
+        <div id="lastList" class="list"></div>
+        <button id="delLast" class="ghost" type="button" hidden>Letzten Eintrag löschen</button>
+      </div>
+      <form id="entryForm" class="entry" novalidate>
+        <div style="font-family:var(--display);font-size:24px">Neuer Zählerstand</div>
+        <label for="inStrom">Strom (kWh)<input id="inStrom" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 41230"></label>
+        <label for="inGas">Gas (m³)<input id="inGas" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 8412,5"></label>
+        <div id="formMsg" role="status"></div>
+        <button class="primary" type="submit">Speichern</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Platzhalter ===== -->
+<section id="soon" class="view sub" aria-label="Bereich in Arbeit" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle" id="soonTitle">Bereich</div>
+    <div style="width:140px"></div>
+  </div>
+  <div class="card soon">
+    <div style="font-family:var(--display);font-size:40px">Kommt als Nächstes</div>
+    <div style="font-size:20px;color:var(--soft);margin-top:10px">Dieser Bereich wird gerade gebaut.</div>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var LAT = 52.3726, LON = 9.9787;   // Lehrte
+  var METER_DAY = 1;                  // Ablesetag im Monat
+  var IDLE_MS = 2 * 60 * 1000;        // nach 2 Minuten zurück zum Start
+  var WX_MS = 15 * 60 * 1000;         // Wetter alle 15 Minuten
+  var RELOAD_MS = 6 * 60 * 60 * 1000; // Seite alle 6 Stunden neu laden (für Updates)
+  var STORE_KEY = 'wanddash.readings.v1';
+
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function fmt(n, d){ return n.toLocaleString('de-DE', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+
+  /* ---------- Skalierung auf das Tablet ---------- */
+  function fit(){
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
+    var st = $('stage');
+    st.style.transform = 'scale(' + s + ')';
+    st.style.left = Math.max(0, (window.innerWidth - 1280 * s) / 2) + 'px';
+    st.style.top = Math.max(0, (window.innerHeight - 800 * s) / 2) + 'px';
+  }
+  window.addEventListener('resize', fit); fit();
+
+  /* ---------- Ansichten ---------- */
+  var idleTimer = null;
+  function show(id, name){
+    ['home','verbrauch','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
+    if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
+    if (id === 'verbrauch') renderMeter();
+    resetIdle();
+  }
+  function resetIdle(){
+    clearTimeout(idleTimer);
+    if ($('home').hidden) idleTimer = setTimeout(function(){ show('home'); }, IDLE_MS);
+  }
+  document.addEventListener('click', function(e){
+    var t = e.target.closest ? e.target.closest('[data-go]') : null;
+    if (t) show(t.getAttribute('data-go'), t.getAttribute('data-name'));
+    resetIdle();
+  });
+  document.addEventListener('input', resetIdle);
+
+  /* ---------- Uhr, Datum, Himmel ---------- */
+  var DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  var DAYS_SHORT = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  var MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  var MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  var SKIES = {
+    night:   ['#0B1230','#1A2150','#2E2C5E', '#E8E6F5', '#1E1D45', '#121331', 0.9],
+    morning: ['#1E2A55','#5B4F86','#F29E6B', '#FFD27A', '#3A3566', '#232447', 0.5],
+    day:     ['#2F6DB5','#5E97D6','#A9CBEA', '#FFE29A', '#3F6B5A', '#2C4E42', 0],
+    evening: ['#2A1F4F','#8A4F7D','#F2895C', '#FFB86B', '#3A2D55', '#221C3D', 0.3]
+  };
+  var sunTimes = null;
+  function skyPhase(now){
+    var h = now.getHours() + now.getMinutes() / 60;
+    var rise = sunTimes ? sunTimes.rise : 7, set = sunTimes ? sunTimes.set : 19;
+    if (h < rise - 0.5 || h > set + 0.75) return 'night';
+    if (h < rise + 1.5) return 'morning';
+    if (h > set - 1.5) return 'evening';
+    return 'day';
+  }
+  var lastPhase = '';
+  function paintSky(phase){
+    if (phase === lastPhase) return; lastPhase = phase;
+    var c = SKIES[phase];
+    $('s1').setAttribute('stop-color', c[0]); $('s2').setAttribute('stop-color', c[1]); $('s3').setAttribute('stop-color', c[2]);
+    $('orbBody').setAttribute('fill', c[3]);
+    $('orbBody').setAttribute('r', phase === 'night' ? 34 : 58);
+    $('orbBody').setAttribute('cy', phase === 'day' ? 150 : (phase === 'night' ? 110 : 300));
+    $('orbGlow').setAttribute('cy', phase === 'day' ? 150 : (phase === 'night' ? 110 : 300));
+    $('orbGlow').setAttribute('opacity', phase === 'night' ? 0.3 : 1);
+    $('hill1').setAttribute('fill', c[4]); $('hill2').setAttribute('fill', c[5]);
+    $('stars').setAttribute('opacity', c[6]);
+  }
+  function tick(){
+    var now = new Date(), h = now.getHours();
+    $('clock').textContent = pad(h) + ':' + pad(now.getMinutes());
+    $('date').textContent = DAYS[now.getDay()] + ', ' + now.getDate() + '. ' + MONTHS[now.getMonth()];
+    $('greet').textContent = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Guten Tag' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
+    paintSky(skyPhase(now));
+    meterHint(now);
+  }
+  function meterHint(now){
+    var next = new Date(now.getFullYear(), now.getMonth(), METER_DAY);
+    if (now.getDate() > METER_DAY) next = new Date(now.getFullYear(), now.getMonth() + 1, METER_DAY);
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var days = Math.round((next - today) / 86400000);
+    $('meterWhen').textContent = days === 0 ? 'Heute fällig' : days === 1 ? 'Morgen' : 'In ' + days + ' Tagen';
+  }
+  setInterval(tick, 1000 * 10); tick();
+
+  /* ---------- Wetter (Open-Meteo, kostenlos, ohne Schlüssel) ---------- */
+  var ICON = {
+    sun: '<svg viewBox="0 0 64 64" width="100%" height="100%"><circle cx="32" cy="32" r="14" fill="#FFD27A"/><g stroke="#FFD27A" stroke-width="4" stroke-linecap="round"><path d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></g></svg>',
+    moon: '<svg viewBox="0 0 64 64" width="100%" height="100%"><path d="M42 44a18 18 0 0 1-16-28 18 18 0 1 0 22 22 18 18 0 0 1-6 6z" fill="#E8E6F5"/></svg>',
+    partly: '<svg viewBox="0 0 64 64" width="100%" height="100%"><circle cx="26" cy="24" r="12" fill="#FFD27A"/><path d="M22 50h26a10 10 0 0 0 0-20 14 14 0 0 0-26.5 4A8 8 0 0 0 22 50z" fill="#E9EEF8"/></svg>',
+    cloud: '<svg viewBox="0 0 64 64" width="100%" height="100%"><path d="M18 48h30a11 11 0 0 0 0-22 15 15 0 0 0-28.5 4A9 9 0 0 0 18 48z" fill="#C9D4EA"/></svg>',
+    fog: '<svg viewBox="0 0 64 64" width="100%" height="100%"><g stroke="#C9D4EA" stroke-width="5" stroke-linecap="round"><path d="M12 24h40M8 34h44M14 44h36"/></g></svg>',
+    rain: '<svg viewBox="0 0 64 64" width="100%" height="100%"><path d="M18 38h30a11 11 0 0 0 0-22 15 15 0 0 0-28.5 4A9 9 0 0 0 18 38z" fill="#C9D4EA"/><g stroke="#8DB8F2" stroke-width="4" stroke-linecap="round"><path d="M22 46l-3 8M34 46l-3 8M46 46l-3 8"/></g></svg>',
+    snow: '<svg viewBox="0 0 64 64" width="100%" height="100%"><path d="M18 38h30a11 11 0 0 0 0-22 15 15 0 0 0-28.5 4A9 9 0 0 0 18 38z" fill="#C9D4EA"/><g fill="#FFFFFF"><circle cx="22" cy="50" r="3"/><circle cx="34" cy="54" r="3"/><circle cx="46" cy="50" r="3"/></g></svg>',
+    storm: '<svg viewBox="0 0 64 64" width="100%" height="100%"><path d="M18 36h30a11 11 0 0 0 0-22 15 15 0 0 0-28.5 4A9 9 0 0 0 18 36z" fill="#9FB0CC"/><path d="M34 38l-8 12h7l-3 10 10-14h-7l3-8z" fill="#FFD27A"/></svg>'
+  };
+  function wmo(code, isDay){
+    if (code === 0) return [isDay ? 'sun' : 'moon', 'Klar'];
+    if (code === 1) return [isDay ? 'sun' : 'moon', 'Überwiegend klar'];
+    if (code === 2) return ['partly', 'Teilweise bewölkt'];
+    if (code === 3) return ['cloud', 'Bedeckt'];
+    if (code === 45 || code === 48) return ['fog', 'Nebel'];
+    if (code >= 51 && code <= 57) return ['rain', 'Nieselregen'];
+    if (code >= 61 && code <= 67) return ['rain', 'Regen'];
+    if (code >= 71 && code <= 77) return ['snow', 'Schnee'];
+    if (code >= 80 && code <= 82) return ['rain', 'Regenschauer'];
+    if (code === 85 || code === 86) return ['snow', 'Schneeschauer'];
+    if (code >= 95) return ['storm', 'Gewitter'];
+    return ['cloud', '–'];
+  }
+  function hm(iso){ var t = iso.split('T')[1] || ''; return t.slice(0,5); }
+  function hours(iso){ var p = hm(iso).split(':'); return (+p[0]) + (+p[1]) / 60; }
+  function loadWeather(){
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON +
+      '&current=temperature_2m,weather_code,is_day' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset' +
+      '&timezone=Europe%2FBerlin&forecast_days=5';
+    fetch(url).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); }).then(function(d){
+      var cur = d.current, w = wmo(cur.weather_code, cur.is_day === 1);
+      $('wxTemp').textContent = Math.round(cur.temperature_2m) + '°';
+      $('wxText').textContent = w[1] + ' · ' + Math.round(d.daily.temperature_2m_min[0]) + '° / ' + Math.round(d.daily.temperature_2m_max[0]) + '°';
+      $('wxIcon').innerHTML = ICON[w[0]];
+      $('sunrise').textContent = hm(d.daily.sunrise[0]);
+      $('sunset').textContent = hm(d.daily.sunset[0]);
+      sunTimes = { rise: hours(d.daily.sunrise[0]), set: hours(d.daily.sunset[0]) };
+      lastPhase = ''; tick();
+      var html = '';
+      for (var i = 1; i <= 4; i++){
+        var dt = new Date(d.daily.time[i] + 'T12:00:00');
+        var di = wmo(d.daily.weather_code[i], true);
+        html += '<div class="day"><div class="d">' + DAYS_SHORT[dt.getDay()] + '</div>' + ICON[di[0]] +
+          '<div class="t num">' + Math.round(d.daily.temperature_2m_max[i]) + '°</div></div>';
+      }
+      $('days').innerHTML = html;
+    }).catch(function(){
+      $('wxText').textContent = 'Wetter gerade nicht erreichbar';
+    });
+  }
+  loadWeather(); setInterval(loadWeather, WX_MS);
+
+  /* ---------- Zählerstände (vorerst auf dem Tablet gespeichert) ---------- */
+  function readStore(){
+    try { var r = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); return Array.isArray(r) ? r : []; }
+    catch (e) { return []; }
+  }
+  function writeStore(list){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+  }
+  function parseNum(s){
+    s = String(s || '').trim().replace(/\s/g, '');
+    if (!s) return null;
+    if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    var n = Number(s); return isFinite(n) && n >= 0 ? n : null;
+  }
+  function intervals(list, key){
+    var out = [];
+    for (var i = 1; i < list.length; i++){
+      var a = list[i-1], b = list[i];
+      if (a[key] == null || b[key] == null) continue;
+      var dt = new Date(b.date);
+      out.push({ label: MONTHS_SHORT[dt.getMonth()], value: b[key] - a[key] });
+    }
+    return out.slice(-6);
+  }
+  function chart(el, data, color, muted, unit, dec){
+    if (data.length === 0){
+      el.innerHTML = '<div class="empty">Sobald du zwei Ablesungen eingetragen hast, erscheint hier dein Verbrauch in ' + unit + '.</div>';
+      return;
+    }
+    var max = 0; data.forEach(function(x){ if (x.value > max) max = x.value; });
+    var html = '<div class="chart">';
+    for (var i = 0; i < 6 - data.length; i++) html += '<div></div>';
+    data.forEach(function(x, i){
+      var last = i === data.length - 1;
+      var h = max > 0 ? Math.max(6, Math.round(x.value / max * 120)) : 6;
+      html += '<div class="barcol"><div class="v" style="color:' + (last ? '#fff' : 'var(--soft)') + '">' + fmt(x.value, dec) +
+        '</div><div class="b" style="height:' + h + 'px;background:' + (last ? color : muted) + '"></div><div class="m" style="color:var(--soft)">' + x.label + '</div></div>';
+    });
+    el.innerHTML = html + '</div>';
+  }
+  function renderMeter(){
+    var list = readStore();
+    $('entryCount').textContent = list.length + (list.length === 1 ? ' Ablesung' : ' Ablesungen');
+    chart($('chartStrom'), intervals(list, 'strom'), '#F29E6B', '#5A3E2B', 'kWh', 0);
+    chart($('chartGas'), intervals(list, 'gas'), '#8DB8F2', '#2C4A73', 'm³', 1);
+    var lines = list.slice(-3).reverse().map(function(r){
+      var d = new Date(r.date);
+      return '<div class="line"><span>' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + '</span><span class="num">' +
+        (r.strom != null ? fmt(r.strom, 0) + ' kWh' : '–') + ' · ' + (r.gas != null ? fmt(r.gas, 1) + ' m³' : '–') + '</span></div>';
+    });
+    $('lastList').innerHTML = lines.length ? lines.join('') : '<div style="font-size:16px;color:var(--soft);margin-top:10px">Noch keine Ablesung gespeichert.</div>';
+    $('delLast').hidden = list.length === 0;
+    $('delLast').textContent = 'Letzten Eintrag löschen'; confirmDel = false;
+  }
+  var confirmDel = false;
+  $('delLast').addEventListener('click', function(){
+    if (!confirmDel){ confirmDel = true; this.textContent = 'Wirklich löschen? Nochmal tippen'; return; }
+    var list = readStore(); list.pop(); writeStore(list); renderMeter();
+  });
+  $('entryForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s = parseNum($('inStrom').value), g = parseNum($('inGas').value), msg = $('formMsg');
+    if (s === null && g === null){ msg.textContent = 'Bitte mindestens einen Zählerstand eintragen.'; return; }
+    var list = readStore(), prev = list[list.length - 1];
+    if (prev && ((s !== null && prev.strom != null && s < prev.strom) || (g !== null && prev.gas != null && g < prev.gas))){
+      msg.textContent = 'Der Wert ist kleiner als die letzte Ablesung. Bitte prüfen.'; return;
+    }
+    list.push({ date: new Date().toISOString(), strom: s, gas: g });
+    if (!writeStore(list)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
+    $('inStrom').value = ''; $('inGas').value = '';
+    msg.textContent = 'Gespeichert.';
+    renderMeter();
+    setTimeout(function(){ msg.textContent = ''; }, 4000);
+  });
+
+  /* ---------- Bildschirm wach halten, regelmäßig neu laden ---------- */
+  function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }
+  wake(); document.addEventListener('visibilitychange', function(){ if (!document.hidden) wake(); });
+  function maybeReload(){ if ($('home').hidden === false) location.reload(); else setTimeout(maybeReload, 60000); }
+  setTimeout(maybeReload, RELOAD_MS);
+})();
+</script>
+</body>
+</html>
