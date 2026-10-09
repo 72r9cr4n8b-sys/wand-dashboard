@@ -33,7 +33,7 @@ export default {
   async fetch(request, env) {
     const cors = {
       'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-      'Access-Control-Allow-Headers': 'Authorization',
+      'Access-Control-Allow-Headers': 'Authorization, Cache-Control, Pragma', // Safari schickt bei cache: 'no-store' beide mit
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Max-Age': '86400',
       'Vary': 'Origin',
