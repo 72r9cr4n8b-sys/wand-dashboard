@@ -88,6 +88,29 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .list{font-size:17px}
 .list .line{display:flex;justify-content:space-between;background:var(--tile2);border-radius:14px;padding:10px 14px;margin-top:8px}
 .ghost{background:var(--tile2);border:0;color:var(--fg);border-radius:999px;padding:10px 16px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
+.evt .tm{width:104px;flex-shrink:0;font-size:18px;font-weight:700;color:var(--soft)}
+.evt .tt{font-size:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.evt .tag{font-size:14px;font-weight:700;color:var(--muted);margin-left:12px;flex-shrink:0}
+.cardhead{display:flex;justify-content:space-between;align-items:center}
+.gear{background:var(--tile2);border:0;border-radius:999px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:-8px -8px 0 0}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-gap:12px;min-height:0}
+.wday{background:var(--tile);border-radius:22px;padding:14px 12px;overflow:hidden;min-height:0}
+.wday.today{background:#2A2346}
+.wday h3{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:22px}
+.wday h3 span{display:block;font-family:var(--body);font-size:14px;font-weight:700;color:var(--muted)}
+.wev{background:var(--tile2);border-left:6px solid var(--violet);border-radius:12px;padding:8px 10px;margin-top:8px}
+.wev .t{font-size:14px;font-weight:700;color:var(--soft)}
+.wev .n{font-size:16px;font-weight:600;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
+.wev.all{border-left-color:var(--orange)}
+.wnone{font-size:15px;color:var(--muted);margin-top:8px}
+.settings{max-width:760px;align-self:start}
+.settings p{font-size:18px;color:var(--soft);line-height:1.45;margin:10px 0 0}
+.settings input{width:100%;height:58px;border-radius:16px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:22px;padding:0 16px;font-family:var(--display);margin-top:18px}
+.btnrow{display:flex;margin-top:16px}
+.btn{height:58px;border:0;border-radius:999px;padding:0 26px;font-size:19px;font-weight:700;cursor:pointer;margin-right:12px}
+.btn.main{background:var(--violet);color:#24123F}
+.btn.alt{background:var(--tile2);color:var(--fg)}
+#setMsg{font-size:18px;font-weight:700;min-height:26px;margin-top:16px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -163,9 +186,11 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 
   <div class="row">
     <div class="card span2">
-      <div class="label" style="color:#C3B2F0">Heute &amp; morgen</div>
-      <div class="evt"><div class="bar" style="background:var(--violet)"></div><div style="font-size:20px;font-weight:600">Kalender wird noch verbunden</div></div>
-      <div class="evt"><div class="bar" style="background:var(--orange)"></div><div style="font-size:20px;color:var(--soft)">Hier erscheinen dann deine Termine</div></div>
+      <div class="cardhead">
+        <div class="label" style="color:#C3B2F0">Heute &amp; morgen <span id="calMore"></span></div>
+        <button class="gear" type="button" data-go="einstellungen" aria-label="Einstellungen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9D4EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+      </div>
+      <div id="calHome"><div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">Kalender wird geladen …</div></div></div>
     </div>
     <div class="col" style="grid-template-rows:1fr 1fr">
       <div id="trash" class="card">
@@ -184,7 +209,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     <button type="button" data-go="soon" data-name="Wetter"><span class="round" style="background:var(--blue)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19 11a3.5 3.5 0 0 1 0 7z"></path></svg></span>Wetter</button>
     <button type="button" data-go="soon" data-name="Einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf</button>
     <button type="button" data-go="soon" data-name="Essensplan"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
-    <button type="button" data-go="soon" data-name="Kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
+    <button type="button" data-go="kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
     <button type="button" data-go="soon" data-name="Pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand</button>
   </nav>
 </section>
@@ -224,6 +249,36 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   </div>
 </section>
 
+<!-- ===== Kalender ===== -->
+<section id="kalender" class="view sub" aria-label="Kalender" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Die nächsten 7 Tage</div>
+    <div class="chip" id="calUpdated">&nbsp;</div>
+  </div>
+  <div id="calWeek" class="week"></div>
+</section>
+
+<!-- ===== Einstellungen ===== -->
+<section id="einstellungen" class="view sub" aria-label="Einstellungen" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Einstellungen</div>
+    <div style="width:140px"></div>
+  </div>
+  <div class="card settings">
+    <div style="font-family:var(--display);font-size:28px">Kalender-Zugang</div>
+    <p>Der Zugangsschlüssel wird nur auf diesem Tablet gespeichert. Ohne ihn zeigt das Dashboard keine Termine an.</p>
+    <p id="keyState" style="color:var(--fg);font-weight:700"></p>
+    <input id="inKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Zugangsschlüssel eingeben" aria-label="Zugangsschlüssel">
+    <div class="btnrow">
+      <button id="saveKey" class="btn main" type="button">Speichern &amp; testen</button>
+      <button id="delKey" class="btn alt" type="button">Schlüssel entfernen</button>
+    </div>
+    <div id="setMsg" role="status"></div>
+  </div>
+</section>
+
 <!-- ===== Platzhalter ===== -->
 <section id="soon" class="view sub" aria-label="Bereich in Arbeit" hidden>
   <div class="subhead">
@@ -247,6 +302,9 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   var WX_MS = 15 * 60 * 1000;         // Wetter alle 15 Minuten
   var RELOAD_MS = 6 * 60 * 60 * 1000; // Seite alle 6 Stunden neu laden (für Updates)
   var STORE_KEY = 'wanddash.readings.v1';
+  var CAL_URL = 'https://wand-dashboard.wanddash-5cqf4.workers.dev/calendar?days=7'; // Vermittler (Cloudflare Worker), enthält keine Geheimnisse
+  var CAL_KEY = 'wanddash.calkey.v1';
+  var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
 
   function $(id){ return document.getElementById(id); }
   function pad(n){ return (n < 10 ? '0' : '') + n; }
@@ -265,9 +323,11 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   /* ---------- Ansichten ---------- */
   var idleTimer = null;
   function show(id, name){
-    ['home','verbrauch','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
+    ['home','verbrauch','kalender','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
     if (id === 'verbrauch') renderMeter();
+    if (id === 'kalender') renderCalendar();
+    if (id === 'einstellungen') openSettings();
     resetIdle();
   }
   function resetIdle(){
@@ -321,6 +381,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     $('greet').textContent = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Guten Tag' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
     paintSky(skyPhase(now));
     meterHint(now);
+    if (calDay !== dayKey(now)) renderCalendar();
   }
   function meterHint(now){
     var next = new Date(now.getFullYear(), now.getMonth(), METER_DAY);
@@ -460,6 +521,112 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     renderMeter();
     setTimeout(function(){ msg.textContent = ''; }, 4000);
   });
+
+  /* ---------- Kalender (über den Vermittler, Schlüssel nur auf dem Tablet) ---------- */
+  var calData = null, calError = '', calDay = '';
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+  function dayKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function getKey(){ try { return localStorage.getItem(CAL_KEY) || ''; } catch (e) { return ''; } }
+  function setKey(k){ try { if (k) localStorage.setItem(CAL_KEY, k); else localStorage.removeItem(CAL_KEY); return true; } catch (e) { return false; } }
+  function eventsOn(key){
+    return (calData ? calData.events : []).filter(function(e){ return e.start <= key && e.end >= key; });
+  }
+  function timeLabel(e, key){
+    if (e.allDay) return 'Ganztägig';
+    if (e.start < key) return 'bis ' + e.endTime;
+    return e.startTime;
+  }
+  function fetchCalendar(cb){
+    var key = getKey();
+    if (!key){ calData = null; calError = 'nokey'; renderCalendar(); if (cb) cb(false); return; }
+    fetch(CAL_URL, { headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' }).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    }).then(function(d){
+      calData = d; calError = ''; renderCalendar(); if (cb) cb(true);
+    }).catch(function(err){
+      calError = err && err.message === 'auth' ? 'auth' : 'net';
+      if (calError === 'auth') calData = null;
+      renderCalendar(); if (cb) cb(false);
+    });
+  }
+  function renderCalendar(){
+    var now = new Date(), today = dayKey(now);
+    var tm = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), tomorrow = dayKey(tm);
+    calDay = today;
+    var home = $('calHome'), more = $('calMore');
+    more.textContent = '';
+    if (!calData){
+      var msg = calError === 'nokey' ? 'Kalender noch nicht verbunden' : calError === 'auth' ? 'Zugangsschlüssel stimmt nicht' : calError === 'net' ? 'Kalender gerade nicht erreichbar' : 'Kalender wird geladen …';
+      var hint = (calError === 'nokey' || calError === 'auth') ? 'Zum Einrichten auf das Zahnrad tippen' : '';
+      home.innerHTML = '<div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">' + msg + '</div></div>' +
+        (hint ? '<div class="evt"><div class="bar" style="background:var(--orange)"></div><div class="tt" style="color:var(--soft)">' + hint + '</div></div>' : '');
+    } else {
+      var list = [];
+      eventsOn(today).forEach(function(e){ list.push({ e: e, k: today, tag: '' }); });
+      eventsOn(tomorrow).forEach(function(e){ if (e.start === tomorrow || !e.allDay) list.push({ e: e, k: tomorrow, tag: 'Morgen' }); });
+      if (!list.length){
+        home.innerHTML = '<div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt" style="color:var(--soft)">Heute und morgen keine Termine</div></div>';
+      } else {
+        home.innerHTML = list.slice(0, 3).map(function(x){
+          return '<div class="evt"><div class="bar" style="background:' + (x.tag ? 'var(--orange)' : 'var(--violet)') + '"></div><div class="tm num">' + esc(timeLabel(x.e, x.k)) +
+            '</div><div class="tt">' + esc(x.e.title) + '</div>' + (x.tag ? '<div class="tag">' + x.tag + '</div>' : '') + '</div>';
+        }).join('');
+        if (list.length > 3) more.textContent = '· ' + (list.length - 3) + ' weitere';
+      }
+      if (calError === 'net') more.textContent = '· nicht aktuell';
+    }
+    // Wochenansicht
+    var html = '';
+    for (var i = 0; i < 7; i++){
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i), k = dayKey(d);
+      var evs = eventsOn(k);
+      html += '<div class="wday' + (i === 0 ? ' today' : '') + '"><h3><span>' + (i === 0 ? 'Heute' : i === 1 ? 'Morgen' : DAYS[d.getDay()]) + '</span>' +
+        DAYS_SHORT[d.getDay()] + ' ' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + '</h3>';
+      if (!calData) {}
+      else if (!evs.length) html += '<div class="wnone">frei</div>';
+      else html += evs.map(function(e){
+        return '<div class="wev' + (e.allDay ? ' all' : '') + '"><div class="t num">' + esc(timeLabel(e, k) + (!e.allDay && e.start === k ? '–' + e.endTime : '')) +
+          '</div><div class="n">' + esc(e.title) + '</div></div>';
+      }).join('');
+      html += '</div>';
+    }
+    $('calWeek').innerHTML = html;
+    var up = calData ? new Date(calData.updated) : null;
+    $('calUpdated').textContent = !calData ? (calError === 'nokey' ? 'Nicht verbunden' : calError === 'auth' ? 'Schlüssel falsch' : 'Nicht erreichbar')
+      : (calError === 'net' ? 'Stand ' : 'Aktualisiert ') + pad(up.getHours()) + ':' + pad(up.getMinutes());
+  }
+  function openSettings(){
+    $('inKey').value = ''; $('setMsg').textContent = '';
+    confirmKeyDel = false; $('delKey').textContent = 'Schlüssel entfernen';
+    openSettingsState();
+  }
+  $('saveKey').addEventListener('click', function(){
+    var k = $('inKey').value.trim(), msg = $('setMsg');
+    if (!k){ msg.textContent = 'Bitte den Zugangsschlüssel eingeben.'; return; }
+    var old = getKey();
+    if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
+    msg.textContent = 'Wird getestet …';
+    fetchCalendar(function(ok){
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); return; }
+      if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
+      else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
+      openSettingsState();
+    });
+  });
+  function openSettingsState(){
+    $('keyState').textContent = getKey() ? 'Auf diesem Tablet ist ein Schlüssel gespeichert.' : 'Noch kein Schlüssel gespeichert.';
+    $('delKey').hidden = !getKey();
+  }
+  var confirmKeyDel = false;
+  $('delKey').addEventListener('click', function(){
+    if (!confirmKeyDel){ confirmKeyDel = true; this.textContent = 'Wirklich entfernen? Nochmal tippen'; return; }
+    confirmKeyDel = false; this.textContent = 'Schlüssel entfernen';
+    setKey(''); calData = null; calError = 'nokey'; renderCalendar(); openSettingsState();
+    $('setMsg').textContent = 'Schlüssel entfernt.';
+  });
+  fetchCalendar(); setInterval(fetchCalendar, CAL_MS);
 
   /* ---------- Bildschirm wach halten, regelmäßig neu laden ---------- */
   function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }
