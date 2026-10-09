@@ -117,6 +117,20 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .btn.main{background:var(--violet);color:#24123F}
 .btn.alt{background:var(--tile2);color:var(--fg)}
 #setMsg{font-size:18px;font-weight:700;min-height:26px;margin-top:16px}
+.shopadd{display:flex;margin-bottom:14px}
+.shopadd input{flex:1;min-width:0;height:60px;border-radius:18px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:22px;padding:0 18px;font-family:var(--body)}
+.shopadd button{height:60px;border:0;border-radius:999px;padding:0 26px;margin-left:12px;font-size:19px;font-weight:700;background:#8ED39A;color:#0E2A14;cursor:pointer}
+.shoplist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:10px;align-content:start;overflow:hidden}
+.item{display:flex;align-items:center;background:var(--tile2);border:0;border-radius:16px;padding:0 16px;height:58px;font-size:20px;font-weight:600;color:var(--fg);text-align:left;cursor:pointer;font-family:var(--body);min-width:0}
+.item .box{width:28px;height:28px;border-radius:9px;border:3px solid #8ED39A;margin-right:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item.done{opacity:.55}
+.item.done span{text-decoration:line-through}
+.item.done .box{background:#8ED39A}
+.chips{display:flex;flex-wrap:wrap;align-content:flex-start;margin:-4px}
+.chips button{background:var(--tile2);border:0;border-radius:999px;padding:10px 16px;margin:4px;font-size:17px;font-weight:600;color:var(--fg);cursor:pointer;font-family:var(--body)}
+.chips button:before{content:'+ ';color:#8ED39A;font-weight:700}
+.badge{background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -213,7 +227,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   <nav aria-label="Bereiche">
     <button type="button" data-go="verbrauch"><span class="round" style="background:var(--orange)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7"></path></svg></span>Verbrauch</button>
     <button type="button" data-go="soon" data-name="Wetter"><span class="round" style="background:var(--blue)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19 11a3.5 3.5 0 0 1 0 7z"></path></svg></span>Wetter</button>
-    <button type="button" data-go="soon" data-name="Einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf</button>
+    <button type="button" data-go="einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf<span id="shopBadge" class="badge" hidden></span></button>
     <button type="button" data-go="soon" data-name="Essensplan"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
     <button type="button" data-go="kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
     <button type="button" data-go="soon" data-name="Pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand</button>
@@ -275,6 +289,34 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   <div id="binGrid" class="bins"></div>
 </section>
 
+<!-- ===== Einkaufsliste ===== -->
+<section id="einkauf" class="view sub" aria-label="Einkaufsliste" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Einkaufsliste</div>
+    <div class="chip" id="shopState">&nbsp;</div>
+  </div>
+  <div class="row">
+    <div class="card span2" style="display:flex;flex-direction:column">
+      <form id="shopForm" class="shopadd" autocomplete="off">
+        <input id="shopIn" type="text" maxlength="80" placeholder="Was fehlt?" aria-label="Neuer Eintrag" enterkeyhint="done">
+        <button type="submit">Hinzufügen</button>
+      </form>
+      <div id="shopList" class="shoplist"></div>
+    </div>
+    <div class="col" style="grid-template-rows:1fr auto">
+      <div class="card" style="overflow:hidden">
+        <div class="label" style="color:#8ED39A;margin-bottom:12px">Schnell wieder hinzufügen</div>
+        <div id="shopRecent" class="chips"></div>
+      </div>
+      <div class="card">
+        <button id="shopClear" class="btn alt" type="button" style="width:100%;margin:0">Erledigte entfernen</button>
+        <div style="font-size:15px;color:var(--soft);margin-top:12px;line-height:1.4">Am Handy: <b>…/wand-dashboard/liste.html</b> öffnen und einmal den Zugangsschlüssel eintragen.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ===== Einstellungen ===== -->
 <section id="einstellungen" class="view sub" aria-label="Einstellungen" hidden>
   <div class="subhead">
@@ -325,6 +367,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   var TRASH_MS = 3 * 60 * 60 * 1000;  // Müllabfuhr alle 3 Stunden
   var CLIMATE_URL = API + '/climate';
   var CLIMATE_MS = 5 * 60 * 1000;     // Innenklima alle 5 Minuten
+  var SHOP_URL = API + '/list/einkauf';
   var CAL_KEY = 'wanddash.calkey.v1';
   var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
 
@@ -345,11 +388,12 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   /* ---------- Ansichten ---------- */
   var idleTimer = null;
   function show(id, name){
-    ['home','verbrauch','kalender','muell','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
+    ['home','verbrauch','kalender','muell','einkauf','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
     if (id === 'verbrauch') renderMeter();
     if (id === 'kalender') renderCalendar();
     if (id === 'muell') renderTrash();
+    if (id === 'einkauf') fetchShop();
     if (id === 'einstellungen') openSettings();
     resetIdle();
   }
@@ -633,7 +677,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -649,6 +693,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     confirmKeyDel = false; this.textContent = 'Schlüssel entfernen';
     setKey(''); calData = null; calError = 'nokey'; renderCalendar(); openSettingsState();
     trashData = null; trashError = 'nokey'; try { localStorage.removeItem(TRASH_KEY); } catch (e) {} renderTrash(); fetchClimate();
+    shop = null; renderShop(); $('shopState').textContent = 'Nicht verbunden';
     $('setMsg').textContent = 'Schlüssel entfernt.';
   });
   fetchCalendar(); setInterval(fetchCalendar, CAL_MS);
@@ -757,6 +802,72 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     });
   }
   fetchClimate(); setInterval(fetchClimate, CLIMATE_MS);
+
+  /* ---------- Einkaufsliste (gemeinsamer Speicher beim Vermittler) ---------- */
+  var shop = null, shopAt = 0, shopBusy = false;
+  function shopReq(method, body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: method, headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(SHOP_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (r.status === 409) throw new Error('full');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    });
+  }
+  function shopFail(err){
+    var m = err && err.message;
+    $('shopState').textContent = m === 'nokey' ? 'Nicht verbunden' : m === 'auth' ? 'Schlüssel falsch' : m === 'full' ? 'Liste ist voll' : 'Nicht erreichbar';
+  }
+  function fetchShop(){
+    shopReq('GET').then(function(d){ shop = d; shopAt = Date.now(); renderShop(); }).catch(function(e){ shopFail(e); renderShop(); });
+  }
+  function shopDo(body){
+    if (shopBusy) return; shopBusy = true;
+    shopReq('POST', body).then(function(d){ shop = d; shopAt = Date.now(); renderShop(); })
+      .catch(function(e){ shopFail(e); fetchShop(); })
+      .then(function(){ shopBusy = false; });
+  }
+  function renderShop(){
+    var items = shop ? shop.items : [];
+    var open = items.filter(function(x){ return !x.done; }), done = items.filter(function(x){ return x.done; });
+    $('shopBadge').hidden = !open.length; $('shopBadge').textContent = open.length;
+    $('shopList').innerHTML = !shop ? '' : !items.length ? '<div style="font-size:19px;color:var(--soft);grid-column:span 2;padding:10px 4px">Die Liste ist leer.</div>' :
+      open.concat(done).map(function(x){
+        return '<button class="item' + (x.done ? ' done' : '') + '" type="button" data-shop="' + esc(x.id) + '"><span class="box">' +
+          (x.done ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>' : '') +
+          '</span><span>' + esc(x.text) + '</span></button>';
+      }).join('');
+    var onList = {}; items.forEach(function(x){ onList[x.text.toLowerCase()] = true; });
+    var rec = (shop ? shop.recent : []).filter(function(t){ return !onList[t.toLowerCase()]; }).slice(0, 18);
+    $('shopRecent').innerHTML = rec.length ? rec.map(function(t){ return '<button type="button" data-readd="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') :
+      '<div style="font-size:16px;color:var(--soft)">Erledigte Einträge erscheinen hier zum schnellen Wiederhinzufügen.</div>';
+    $('shopClear').hidden = !done.length;
+    if (shop) $('shopState').textContent = open.length + ' offen' + (done.length ? ' · ' + done.length + ' erledigt' : '');
+  }
+  $('shopForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var t = $('shopIn').value.trim();
+    if (!t) return;
+    $('shopIn').value = '';
+    shopDo({ op: 'add', text: t });
+  });
+  $('shopList').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-shop]') : null;
+    if (b) shopDo({ op: 'toggle', id: b.getAttribute('data-shop') });
+  });
+  $('shopRecent').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-readd]') : null;
+    if (b) shopDo({ op: 'add', text: b.getAttribute('data-readd') });
+  });
+  $('shopClear').addEventListener('click', function(){ shopDo({ op: 'clearDone' }); });
+  // Offene Liste jede Minute auffrischen, sonst alle 5 Minuten (für die Zahl am Knopf)
+  setInterval(function(){
+    if (!$('einkauf').hidden || Date.now() - shopAt > 5 * 60 * 1000) fetchShop();
+  }, 60 * 1000);
+  fetchShop();
 
   /* ---------- Bildschirm wach halten, regelmäßig neu laden ---------- */
   function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }

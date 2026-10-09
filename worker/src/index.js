@@ -12,6 +12,8 @@
  *   Beschreibungen, Orte oder Teilnehmer. Nur lesen, nie schreiben.
  * GET /trash → nächste Abholtermine je Tonne (aha Region Hannover, Gemeinde Lehrte).
  * GET /climate → Temperatur und Luftfeuchte des Govee-Thermometers.
+ * GET /list/einkauf → Einkaufsliste aus dem gemeinsamen Speicher (KV "DATA")
+ * POST /list/einkauf  {op:"add",text} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -22,6 +24,8 @@ const AHA_GEMEINDE = 'Lehrte';
 const TRASH_CACHE_MS = 6 * 60 * 60 * 1000;
 const GOVEE_API = 'https://openapi.api.govee.com/router/api/v1';
 const CLIMATE_CACHE_MS = 2 * 60 * 1000;
+const LISTS = ['einkauf'];
+const MAX_ITEMS = 150, MAX_TEXT = 80, MAX_RECENT = 30;
 const DAY = 86400000;
 
 let memo = null;      // { at, days, dayKey, body } – Zwischenspeicher je Instanz
@@ -33,8 +37,8 @@ export default {
   async fetch(request, env) {
     const cors = {
       'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-      'Access-Control-Allow-Headers': 'Authorization, Cache-Control, Pragma', // Safari schickt bei cache: 'no-store' beide mit
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type, Cache-Control, Pragma', // Safari schickt bei cache: 'no-store' die letzten beiden mit
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Max-Age': '86400',
       'Vary': 'Origin',
     };
@@ -44,16 +48,18 @@ export default {
     });
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-    if (request.method !== 'GET') return reply(405, { error: 'method' });
-
     const url = new URL(request.url);
-    if (!['/calendar', '/trash', '/climate'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
+    if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
+    if (!listName && !['/calendar', '/trash', '/climate'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    if (request.method !== 'GET' && !(listName && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
     const auth = request.headers.get('Authorization') || '';
     const given = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
     if (!given || !(await sameSecret(given, env.ACCESS_KEY))) return reply(401, { error: 'unauthorized' });
 
+    if (listName) return list(request, env, reply, listName);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -387,4 +393,50 @@ async function climate(env, reply) {
   } catch (e) {
     return reply(502, { error: 'govee unreachable' });
   }
+}
+
+/* ---------- Gemeinsame Listen (KV) ---------- */
+async function list(request, env, reply, name) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  const key = 'list:' + name;
+  const data = (await env.DATA.get(key, 'json')) || { items: [], recent: [], updated: null };
+  if (request.method === 'GET') return reply(200, data);
+
+  let body;
+  try {
+    const raw = await request.text();
+    if (raw.length > 2000) return reply(413, { error: 'too large' });
+    body = JSON.parse(raw);
+  } catch (e) { return reply(400, { error: 'bad request' }); }
+
+  const items = data.items;
+  const find = id => items.findIndex(x => x.id === id);
+  const remember = text => {
+    data.recent = [text].concat(data.recent.filter(t => t.toLowerCase() !== text.toLowerCase())).slice(0, MAX_RECENT);
+  };
+  if (body.op === 'add') {
+    const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT);
+    if (!text) return reply(400, { error: 'empty' });
+    const same = items.find(x => x.text.toLowerCase() === text.toLowerCase());
+    if (same) same.done = false; // schon auf der Liste: wieder aktivieren statt doppelt
+    else {
+      if (items.length >= MAX_ITEMS) return reply(409, { error: 'full' });
+      items.push({ id: crypto.randomUUID().slice(0, 8), text, done: false, added: new Date().toISOString() });
+    }
+  } else if (body.op === 'toggle') {
+    const i = find(body.id);
+    if (i < 0) return reply(200, data); // inzwischen woanders gelöscht
+    items[i].done = !items[i].done;
+  } else if (body.op === 'remove') {
+    const i = find(body.id);
+    if (i >= 0) { remember(items[i].text); items.splice(i, 1); }
+  } else if (body.op === 'clearDone') {
+    items.filter(x => x.done).forEach(x => remember(x.text));
+    data.items = items.filter(x => !x.done);
+  } else {
+    return reply(400, { error: 'unknown op' });
+  }
+  data.updated = new Date().toISOString();
+  await env.DATA.put(key, JSON.stringify(data));
+  return reply(200, data);
 }

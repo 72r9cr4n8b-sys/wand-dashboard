@@ -2,3 +2,8 @@ name = "wand-dashboard"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
+
+# Gemeinsamer Speicher (Einkaufsliste u. a.) – die ID ist kein Geheimnis
+[[kv_namespaces]]
+binding = "DATA"
+id = "ec7915fd0fb24ba3a05b8577cd01bd44"
