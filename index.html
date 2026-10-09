@@ -184,7 +184,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
         <div class="txt">
           <div class="label" style="color:#8FD9C3">Innen</div>
           <div id="inTemp" class="num" style="font-size:44px;line-height:1.05">--°</div>
-          <div style="font-size:15px;color:#BFD9D2">Govee folgt</div>
+          <div id="inState" style="font-size:15px;color:#BFD9D2">wird geladen …</div>
         </div>
       </div>
     </div>
@@ -283,7 +283,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     <div style="width:140px"></div>
   </div>
   <div class="card settings">
-    <div style="font-family:var(--display);font-size:28px">Zugang für Kalender &amp; Müllabfuhr</div>
+    <div style="font-family:var(--display);font-size:28px">Zugangsschlüssel</div>
     <p>Der Zugangsschlüssel wird nur auf diesem Tablet gespeichert. Ohne ihn zeigt das Dashboard keine Termine an.</p>
     <p id="keyState" style="color:var(--fg);font-weight:700"></p>
     <input id="inKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Zugangsschlüssel eingeben" aria-label="Zugangsschlüssel">
@@ -323,6 +323,8 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   var TRASH_URL = API + '/trash';
   var TRASH_KEY = 'wanddash.trash.v1';
   var TRASH_MS = 3 * 60 * 60 * 1000;  // Müllabfuhr alle 3 Stunden
+  var CLIMATE_URL = API + '/climate';
+  var CLIMATE_MS = 5 * 60 * 1000;     // Innenklima alle 5 Minuten
   var CAL_KEY = 'wanddash.calkey.v1';
   var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
 
@@ -631,7 +633,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -646,7 +648,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (!confirmKeyDel){ confirmKeyDel = true; this.textContent = 'Wirklich entfernen? Nochmal tippen'; return; }
     confirmKeyDel = false; this.textContent = 'Schlüssel entfernen';
     setKey(''); calData = null; calError = 'nokey'; renderCalendar(); openSettingsState();
-    trashData = null; trashError = 'nokey'; try { localStorage.removeItem(TRASH_KEY); } catch (e) {} renderTrash();
+    trashData = null; trashError = 'nokey'; try { localStorage.removeItem(TRASH_KEY); } catch (e) {} renderTrash(); fetchClimate();
     $('setMsg').textContent = 'Schlüssel entfernt.';
   });
   fetchCalendar(); setInterval(fetchCalendar, CAL_MS);
@@ -727,6 +729,34 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     $('trashUpdated').textContent = up ? (trashError === 'net' ? 'Stand ' : 'Aktualisiert ') + up.getDate() + '. ' + MONTHS_SHORT[up.getMonth()] + ' ' + pad(up.getHours()) + ':' + pad(up.getMinutes()) : 'Nicht verbunden';
   }
   renderTrash(); fetchTrash(); setInterval(fetchTrash, TRASH_MS);
+
+  /* ---------- Innenklima (Govee H5179, über den Vermittler) ---------- */
+  function showClimate(t, h, state){
+    $('inTemp').textContent = t == null ? '--°' : fmt(t, 1) + '°';
+    $('humText').textContent = h == null ? '–' : h + '%';
+    $('humRing').setAttribute('stroke-dasharray', (h == null ? 0 : Math.round(h / 100 * 195)) + ' 195');
+    $('inState').textContent = state;
+  }
+  function fetchClimate(){
+    var key = getKey();
+    if (!key){ showClimate(null, null, 'Noch nicht verbunden'); return; }
+    fetch(CLIMATE_URL, { headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' }).then(function(r){
+      return r.json().then(function(d){ return { status: r.status, d: d }; });
+    }).then(function(x){
+      var d = x.d;
+      if (x.status === 200){
+        var h = d.humidity, air = h == null ? '' : h < 40 ? 'Luft trocken' : h > 60 ? 'Luft feucht' : 'Luft angenehm';
+        var up = new Date(d.updated);
+        showClimate(d.temperature, h, d.online ? (air ? air + ' · ' : '') + pad(up.getHours()) + ':' + pad(up.getMinutes()) : 'Thermometer offline');
+        return;
+      }
+      showClimate(null, null, x.status === 401 ? 'Schlüssel stimmt nicht' : x.status === 500 ? 'Govee-Schlüssel fehlt noch' :
+        d.error === 'govee key' ? 'Govee-Schlüssel ungültig' : d.error === 'no thermometer' ? 'Kein Thermometer gefunden' : 'Govee nicht erreichbar');
+    }).catch(function(){
+      $('inState').textContent = 'Govee nicht erreichbar';
+    });
+  }
+  fetchClimate(); setInterval(fetchClimate, CLIMATE_MS);
 
   /* ---------- Bildschirm wach halten, regelmäßig neu laden ---------- */
   function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }

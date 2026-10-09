@@ -5,11 +5,13 @@
  *   ICAL_URL    – private iCal-Adresse des Google-Kalenders
  *   ACCESS_KEY  – Zugangsschlüssel, der auf dem Tablet eingetragen wird
  *   AHA_ADRESSE – Adresse für die Müllabfuhr, z. B. "Musterweg 5" oder "Musterweg 5a, Ahlten"
+ *   GOVEE_KEY   – API-Schlüssel aus der Govee-Home-App
  *
  * Alle Abfragen brauchen den Header  Authorization: Bearer <ACCESS_KEY>
  * GET /calendar?days=7 → nur Titel und Zeiten der Termine im Zeitraum, keine
  *   Beschreibungen, Orte oder Teilnehmer. Nur lesen, nie schreiben.
  * GET /trash → nächste Abholtermine je Tonne (aha Region Hannover, Gemeinde Lehrte).
+ * GET /climate → Temperatur und Luftfeuchte des Govee-Thermometers.
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -18,10 +20,14 @@ const CACHE_MS = 10 * 60 * 1000;
 const AHA_URL = 'https://www.aha-region.de/abholtermine/abfuhrkalender';
 const AHA_GEMEINDE = 'Lehrte';
 const TRASH_CACHE_MS = 6 * 60 * 60 * 1000;
+const GOVEE_API = 'https://openapi.api.govee.com/router/api/v1';
+const CLIMATE_CACHE_MS = 2 * 60 * 1000;
 const DAY = 86400000;
 
 let memo = null;      // { at, days, dayKey, body } – Zwischenspeicher je Instanz
 let trashMemo = null; // { at, addr, dayKey, body }
+let climateMemo = null; // { at, body }
+let goveeDevice = null; // { sku, device } – Gerät merken, spart eine Abfrage
 
 export default {
   async fetch(request, env) {
@@ -41,7 +47,7 @@ export default {
     if (request.method !== 'GET') return reply(405, { error: 'method' });
 
     const url = new URL(request.url);
-    if (url.pathname !== '/calendar' && url.pathname !== '/trash') return reply(404, { error: 'not found' });
+    if (!['/calendar', '/trash', '/climate'].includes(url.pathname)) return reply(404, { error: 'not found' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
     const auth = request.headers.get('Authorization') || '';
@@ -49,6 +55,7 @@ export default {
     if (!given || !(await sameSecret(given, env.ACCESS_KEY))) return reply(401, { error: 'unauthorized' });
 
     if (url.pathname === '/trash') return trash(env, reply);
+    if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
 
     const days = Math.min(14, Math.max(1, parseInt(url.searchParams.get('days') || '7', 10) || 7));
@@ -339,4 +346,45 @@ function parseTrash(html) {
     if (name && dates.length) out.push({ type: name, dates });
   }
   return out;
+}
+
+/* ---------- Govee-Thermometer (nur lesen) ---------- */
+async function climate(env, reply) {
+  if (!env.GOVEE_KEY) return reply(500, { error: 'not configured' });
+  if (climateMemo && Date.now() - climateMemo.at < CLIMATE_CACHE_MS) return reply(200, climateMemo.body);
+  const headers = { 'Govee-API-Key': env.GOVEE_KEY, 'Content-Type': 'application/json' };
+  try {
+    if (!goveeDevice) {
+      const r = await fetch(GOVEE_API + '/user/devices', { headers });
+      if (r.status === 401 || r.status === 403) return reply(502, { error: 'govee key' });
+      if (!r.ok) throw new Error('status ' + r.status);
+      const list = ((await r.json()).data || []);
+      const d = list.find(x => /^H5179/i.test(x.sku)) ||
+        list.find(x => (x.capabilities || []).some(c => c.instance === 'sensorTemperature'));
+      if (!d) return reply(404, { error: 'no thermometer' });
+      goveeDevice = { sku: d.sku, device: d.device };
+    }
+    const r = await fetch(GOVEE_API + '/device/state', {
+      method: 'POST', headers,
+      body: JSON.stringify({ requestId: crypto.randomUUID(), payload: goveeDevice }),
+    });
+    if (r.status === 401 || r.status === 403) return reply(502, { error: 'govee key' });
+    if (!r.ok) throw new Error('status ' + r.status);
+    const caps = (((await r.json()).payload || {}).capabilities) || [];
+    const val = name => { const c = caps.find(x => x.instance === name); return c && c.state ? c.state.value : null; };
+    let t = val('sensorTemperature'), h = val('sensorHumidity'), online = val('online');
+    if (h && typeof h === 'object') h = h.currentHumidity;
+    if (typeof t === 'number' && t > 45) t = (t - 32) * 5 / 9; // Govee liefert °F
+    if (typeof t !== 'number' && typeof h !== 'number') { goveeDevice = null; return reply(502, { error: 'no data' }); }
+    const body = {
+      updated: new Date().toISOString(),
+      temperature: typeof t === 'number' ? Math.round(t * 10) / 10 : null,
+      humidity: typeof h === 'number' ? Math.round(h) : null,
+      online: online !== false,
+    };
+    climateMemo = { at: Date.now(), body };
+    return reply(200, body);
+  } catch (e) {
+    return reply(502, { error: 'govee unreachable' });
+  }
 }
