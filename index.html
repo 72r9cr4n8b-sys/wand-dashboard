@@ -79,16 +79,31 @@ button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 .subtitle{font-family:var(--display);font-size:36px}
 .chip{background:var(--tile);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:700;color:var(--muted)}
 
-.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:18px;align-items:end;height:170px;margin-top:10px}
+.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px;align-items:end;height:200px;margin-top:10px}
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin-top:6px}
+.verdict small{display:block;font-family:var(--body);font-size:17px;font-weight:600;color:var(--soft);margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-gap:12px;margin-top:16px}
+.stat{background:rgba(255,255,255,.07);border-radius:16px;padding:12px 14px}
+.stat .k{font-size:14px;font-weight:700;color:#F7BE98}
+.stat .v{font-family:var(--display);font-size:26px;margin-top:2px}
+.stat .s{font-size:14px;color:var(--soft)}
+.note{font-size:14px;color:var(--soft);margin-top:12px}
+#verbrauch .list .line{padding:8px 12px;margin-top:6px}
+#verbrauch .ghost{margin-top:8px;padding:8px 14px}
+#verbrauch form.entry{padding:18px 22px}
+.setgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:18px;align-items:start;min-height:0}
+.tform label{display:block;font-size:15px;font-weight:700;color:var(--muted);margin-top:12px}
+.tform .settings-in, .tform input{width:100%;height:50px;border-radius:14px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:20px;padding:0 14px;font-family:var(--display);margin-top:6px}
+.tform .pair{display:grid;grid-template-columns:1fr 1fr;grid-gap:12px}
 .barcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
-.barcol .v{font-family:var(--display);font-size:17px;margin-bottom:6px}
+.barcol .v{font-family:var(--display);font-size:16px;margin-bottom:6px;white-space:nowrap}
 .barcol .b{width:100%;border-radius:14px}
 .barcol .m{font-size:15px;font-weight:600;margin-top:6px}
 .empty{height:170px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:18px;color:var(--soft);padding:0 30px}
 
 form.entry{background:var(--yellow);color:#2A2208;border-radius:28px;padding:22px 26px;display:flex;flex-direction:column}
-form.entry label{display:flex;flex-direction:column;font-size:16px;font-weight:700;margin-top:12px}
-form.entry input{height:54px;border-radius:16px;border:0;background:#FFF6D9;color:#2A2208;font-size:20px;padding:0 16px;font-family:var(--display);margin-top:6px}
+form.entry label{display:flex;flex-direction:column;font-size:16px;font-weight:700;margin-top:10px}
+form.entry input{height:50px;border-radius:16px;border:0;background:#FFF6D9;color:#2A2208;font-size:20px;padding:0 16px;font-family:var(--display);margin-top:6px}
 form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;background:#2A2208;color:#FFF6D9;font-size:19px;font-weight:700;cursor:pointer}
 #formMsg{font-size:15px;font-weight:700;min-height:20px;margin-top:8px}
 .list{font-size:17px}
@@ -239,28 +254,35 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   <div class="subhead">
     <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
     <div class="subtitle">Strom &amp; Gas</div>
-    <div class="chip" id="entryCount">0 Ablesungen</div>
+    <div class="chip" id="entryCount">&nbsp;</div>
   </div>
   <div class="row">
-    <div class="col span2" style="grid-template-rows:1fr 1fr">
+    <div class="col span2" style="grid-template-rows:auto 1fr">
       <div class="card" style="background:#2E2219">
-        <div class="label" style="color:#F7BE98">Strom · kWh pro Zeitraum</div>
-        <div id="chartStrom"></div>
+        <div class="label" style="color:#F7BE98" id="checkHead">Strom · Abschlag-Check</div>
+        <div id="check"></div>
       </div>
-      <div class="card" style="background:#172A45">
-        <div class="label" style="color:#B6CFF2">Gas · m³ pro Zeitraum</div>
-        <div id="chartGas"></div>
+      <div class="row" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="card" style="background:#2E2219">
+          <div class="label" style="color:#F7BE98">Strom · kWh pro Zeitraum</div>
+          <div id="chartStrom"></div>
+        </div>
+        <div class="card" style="background:#172A45">
+          <div class="label" style="color:#B6CFF2">Gas · m³ pro Zeitraum</div>
+          <div id="chartGas"></div>
+        </div>
       </div>
     </div>
     <div class="col" style="grid-template-rows:auto 1fr">
       <div class="card">
         <div class="label" style="color:#C3B2F0">Letzte Ablesungen</div>
         <div id="lastList" class="list"></div>
-        <button id="delLast" class="ghost" type="button" hidden>Letzten Eintrag löschen</button>
+        <button id="delLast" class="ghost" type="button" hidden>Zuletzt eingetragenen löschen</button>
       </div>
       <form id="entryForm" class="entry" novalidate>
         <div style="font-family:var(--display);font-size:24px">Neuer Zählerstand</div>
-        <label for="inStrom">Strom (kWh)<input id="inStrom" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 41230"></label>
+        <label for="inDate">Datum<input id="inDate" type="date"></label>
+        <label for="inStrom">Strom (kWh)<input id="inStrom" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 15830"></label>
         <label for="inGas">Gas (m³)<input id="inGas" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 8412,5"></label>
         <div id="formMsg" role="status"></div>
         <button class="primary" type="submit">Speichern</button>
@@ -324,6 +346,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     <div class="subtitle">Einstellungen</div>
     <div style="width:140px"></div>
   </div>
+  <div class="setgrid">
   <div class="card settings">
     <div style="font-family:var(--display);font-size:28px">Zugangsschlüssel</div>
     <p>Der Zugangsschlüssel wird nur auf diesem Tablet gespeichert. Ohne ihn zeigt das Dashboard keine Termine an.</p>
@@ -334,6 +357,20 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
       <button id="delKey" class="btn alt" type="button">Schlüssel entfernen</button>
     </div>
     <div id="setMsg" role="status"></div>
+  </div>
+  <form id="tariffForm" class="card tform" novalidate>
+    <div style="font-family:var(--display);font-size:28px">Stromtarif</div>
+    <div class="pair">
+      <label for="tGrund">Grundpreis (€ / Monat)<input id="tGrund" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label for="tArbeit">Arbeitspreis (Cent / kWh)<input id="tArbeit" type="text" inputmode="decimal" autocomplete="off"></label>
+    </div>
+    <div class="pair">
+      <label for="tAbschlag">Abschlag (€ / Monat)<input id="tAbschlag" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label for="tStart">Abrechnungsbeginn<input id="tStart" type="date"></label>
+    </div>
+    <div class="btnrow"><button class="btn main" type="submit">Tarif speichern</button></div>
+    <div id="tariffMsg" role="status" style="font-size:17px;font-weight:700;min-height:24px;margin-top:12px"></div>
+  </form>
   </div>
 </section>
 
@@ -359,7 +396,8 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   var IDLE_MS = 2 * 60 * 1000;        // nach 2 Minuten zurück zum Start
   var WX_MS = 15 * 60 * 1000;         // Wetter alle 15 Minuten
   var RELOAD_MS = 6 * 60 * 60 * 1000; // Seite alle 6 Stunden neu laden (für Updates)
-  var STORE_KEY = 'wanddash.readings.v1';
+  var STORE_KEY = 'wanddash.readings.v1';  // alte, nur lokale Ablesungen (werden einmalig übernommen)
+  var METER_CACHE = 'wanddash.meter.v2';
   var API = 'https://wand-dashboard.wanddash-5cqf4.workers.dev'; // Vermittler (Cloudflare Worker), enthält keine Geheimnisse
   var CAL_URL = API + '/calendar?days=7';
   var TRASH_URL = API + '/trash';
@@ -368,6 +406,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   var CLIMATE_URL = API + '/climate';
   var CLIMATE_MS = 5 * 60 * 1000;     // Innenklima alle 5 Minuten
   var SHOP_URL = API + '/list/einkauf';
+  var METER_URL = API + '/meter';
   var CAL_KEY = 'wanddash.calkey.v1';
   var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
 
@@ -390,11 +429,11 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   function show(id, name){
     ['home','verbrauch','kalender','muell','einkauf','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
-    if (id === 'verbrauch') renderMeter();
+    if (id === 'verbrauch'){ renderMeter(); fetchMeter(); }
     if (id === 'kalender') renderCalendar();
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
-    if (id === 'einstellungen') openSettings();
+    if (id === 'einstellungen'){ openSettings(); fillTariff(); }
     resetIdle();
   }
   function resetIdle(){
@@ -515,33 +554,58 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   }
   loadWeather(); setInterval(loadWeather, WX_MS);
 
-  /* ---------- Zählerstände (vorerst auf dem Tablet gespeichert) ---------- */
-  function readStore(){
+  /* ---------- Zählerstände und Stromtarif (gemeinsamer Speicher beim Vermittler) ---------- */
+  var meter = null, meterError = '', meterBusy = false;
+  try { meter = JSON.parse(localStorage.getItem(METER_CACHE) || 'null'); } catch (e) { meter = null; }
+  function readOldStore(){ // frühere, nur auf dem Tablet gespeicherte Ablesungen
     try { var r = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); return Array.isArray(r) ? r : []; }
     catch (e) { return []; }
-  }
-  function writeStore(list){
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
   }
   function parseNum(s){
     s = String(s || '').trim().replace(/\s/g, '');
     if (!s) return null;
     if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
-    var n = Number(s); return isFinite(n) && n >= 0 ? n : null;
+    var n = Number(s); return isFinite(n) && n >= 0 ? n : NaN;
   }
-  function intervals(list, key){
-    var out = [];
+  function euro(n){ return fmt(n, 0) + ' €'; }
+  function dayLabel(k){ var d = parseDay(k); return d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + ' ' + d.getFullYear(); }
+  function meterReq(body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(METER_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (!r.ok) throw new Error(r.status === 400 ? 'invalid' : 'net');
+      return r.json();
+    });
+  }
+  function gotMeter(d){
+    meter = d; meterError = '';
+    try { localStorage.setItem(METER_CACHE, JSON.stringify(d)); } catch (e) {}
+    renderMeter(); fillTariff();
+  }
+  function fetchMeter(){
+    meterReq().then(function(d){
+      // Alte Tablet-Ablesungen einmalig in den gemeinsamen Speicher übernehmen
+      var old = readOldStore(), done = false;
+      try { done = localStorage.getItem(STORE_KEY + '.moved') === '1'; } catch (e) {}
+      if (!old.length || done) return d;
+      return meterReq({ op: 'import', readings: old.map(function(r){ return { date: dayKey(new Date(r.date)), strom: r.strom, gas: r.gas }; }) })
+        .then(function(d2){ try { localStorage.setItem(STORE_KEY + '.moved', '1'); } catch (e) {} return d2; });
+    }).then(gotMeter).catch(function(e){ meterError = (e && e.message) || 'net'; renderMeter(); });
+  }
+  function readingsOf(key){ return (meter ? meter.readings : []).filter(function(r){ return r[key] != null; }); }
+  function intervals(key){
+    var list = readingsOf(key), out = [];
     for (var i = 1; i < list.length; i++){
-      var a = list[i-1], b = list[i];
-      if (a[key] == null || b[key] == null) continue;
-      var dt = new Date(b.date);
-      out.push({ label: MONTHS_SHORT[dt.getMonth()], value: b[key] - a[key] });
+      out.push({ label: MONTHS_SHORT[parseDay(list[i].date).getMonth()], value: list[i][key] - list[i-1][key] });
     }
     return out.slice(-6);
   }
   function chart(el, data, color, muted, unit, dec){
     if (data.length === 0){
-      el.innerHTML = '<div class="empty">Sobald du zwei Ablesungen eingetragen hast, erscheint hier dein Verbrauch in ' + unit + '.</div>';
+      el.innerHTML = '<div class="empty" style="height:200px">Ab zwei Ablesungen erscheint hier dein Verbrauch in ' + unit + '.</div>';
       return;
     }
     var max = 0; data.forEach(function(x){ if (x.value > max) max = x.value; });
@@ -549,46 +613,114 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     for (var i = 0; i < 6 - data.length; i++) html += '<div></div>';
     data.forEach(function(x, i){
       var last = i === data.length - 1;
-      var h = max > 0 ? Math.max(6, Math.round(x.value / max * 120)) : 6;
+      var h = max > 0 ? Math.max(6, Math.round(x.value / max * 140)) : 6;
       html += '<div class="barcol"><div class="v" style="color:' + (last ? '#fff' : 'var(--soft)') + '">' + fmt(x.value, dec) +
         '</div><div class="b" style="height:' + h + 'px;background:' + (last ? color : muted) + '"></div><div class="m" style="color:var(--soft)">' + x.label + '</div></div>';
     });
     el.innerHTML = html + '</div>';
   }
+  // Abschlag-Check: Hochrechnung aus dem Tagesdurchschnitt seit Abrechnungsbeginn
+  function stromCheck(){
+    var t = meter && meter.tariff && meter.tariff.strom;
+    if (!t) return { msg: 'Trag deinen Stromtarif unter Einstellungen (Zahnrad) ein.' };
+    var start = parseDay(t.start), list = readingsOf('strom'), base = null, best = Infinity;
+    list.forEach(function(r){ var dist = Math.abs(parseDay(r.date) - start) / 86400000; if (dist <= 31 && dist < best){ best = dist; base = r; } });
+    if (!base) return { msg: 'Es fehlt eine Ablesung um den ' + dayLabel(t.start) + ' (Abrechnungsbeginn).' };
+    var latest = list[list.length - 1], days = (parseDay(latest.date) - parseDay(base.date)) / 86400000;
+    if (days < 14) return { msg: 'Trag einen aktuellen Zählerstand ein – dann rechne ich hoch, ob dein Abschlag reicht.' };
+    var end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
+    var yearDays = Math.round((end - start) / 86400000);
+    var kwh = latest.strom - base.strom, perDay = kwh / days, months = days / (yearDays / 12);
+    var yearKwh = perDay * yearDays, yearCost = yearKwh * t.arbeit + 12 * t.grund, yearPaid = 12 * t.abschlag;
+    return {
+      t: t, base: base, latest: latest, kwh: kwh, perDay: perDay, yearKwh: yearKwh, yearCost: yearCost,
+      costSoFar: kwh * t.arbeit + months * t.grund, paidSoFar: months * t.abschlag,
+      diff: yearPaid - yearCost, suggest: Math.ceil(yearCost / 12),
+      endLabel: dayLabel(dayKey(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1))),
+      newYear: parseDay(latest.date) >= end
+    };
+  }
+  function renderCheck(){
+    var c = stromCheck(), el = $('check');
+    if (c.msg){ el.innerHTML = '<div class="verdict" style="font-size:24px">' + esc(c.msg) + '</div>'; $('checkHead').textContent = 'Strom · Abschlag-Check'; return; }
+    $('checkHead').textContent = 'Strom · Abrechnungsjahr ' + dayLabel(c.t.start) + ' – ' + c.endLabel;
+    var ok = c.diff >= 0, close = Math.abs(c.diff) < 30;
+    var head = ok ? (close ? 'Abschlag passt genau' : 'Abschlag reicht') : 'Abschlag reicht nicht';
+    var sub = ok ? 'Voraussichtlich ca. ' + euro(c.diff) + ' Guthaben zum ' + c.endLabel + '.'
+                 : 'Voraussichtlich ca. ' + euro(-c.diff) + ' Nachzahlung zum ' + c.endLabel + '. Empfohlener Abschlag: ' + euro(c.suggest) + ' statt ' + euro(c.t.abschlag) + '.';
+    el.innerHTML = '<div class="verdict" style="color:' + (ok ? '#8ED39A' : '#FF9A7A') + '">' + head + '<small>' + sub + '</small></div>' +
+      '<div class="stats">' +
+        '<div class="stat"><div class="k">Verbrauch bisher</div><div class="v num">' + fmt(c.kwh, 0) + ' kWh</div><div class="s">' + fmt(c.perDay, 1) + ' kWh pro Tag</div></div>' +
+        '<div class="stat"><div class="k">Kosten bisher</div><div class="v num">' + euro(c.costSoFar) + '</div><div class="s">inkl. Grundpreis</div></div>' +
+        '<div class="stat"><div class="k">Abschläge bisher</div><div class="v num">' + euro(c.paidSoFar) + '</div><div class="s">' + euro(c.t.abschlag) + ' pro Monat</div></div>' +
+        '<div class="stat"><div class="k">Hochrechnung Jahr</div><div class="v num">' + euro(c.yearCost) + '</div><div class="s">' + fmt(c.yearKwh, 0) + ' kWh</div></div>' +
+      '</div>' +
+      '<div class="note">' + (c.newYear ? 'Das Abrechnungsjahr ist vorbei – bitte in den Einstellungen den neuen Abrechnungsbeginn und Tarif eintragen.' :
+        'Hochgerechnet aus deinem Tagesdurchschnitt zwischen ' + dayLabel(c.base.date) + ' und ' + dayLabel(c.latest.date) + '. Im Winter ist der Verbrauch meist etwas höher.') + '</div>';
+  }
   function renderMeter(){
-    var list = readStore();
-    $('entryCount').textContent = list.length + (list.length === 1 ? ' Ablesung' : ' Ablesungen');
-    chart($('chartStrom'), intervals(list, 'strom'), '#F29E6B', '#5A3E2B', 'kWh', 0);
-    chart($('chartGas'), intervals(list, 'gas'), '#8DB8F2', '#2C4A73', 'm³', 1);
+    var list = meter ? meter.readings : [];
+    $('entryCount').textContent = meterError === 'net' && meter ? 'Offline · ' + list.length + ' Ablesungen' :
+      meterError && !meter ? (meterError === 'nokey' ? 'Nicht verbunden' : meterError === 'auth' ? 'Schlüssel falsch' : 'Nicht erreichbar') :
+      list.length + (list.length === 1 ? ' Ablesung' : ' Ablesungen');
+    chart($('chartStrom'), intervals('strom'), '#F29E6B', '#5A3E2B', 'kWh', 0);
+    chart($('chartGas'), intervals('gas'), '#8DB8F2', '#2C4A73', 'm³', 1);
+    renderCheck();
     var lines = list.slice(-3).reverse().map(function(r){
-      var d = new Date(r.date);
-      return '<div class="line"><span>' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + '</span><span class="num">' +
+      var d = parseDay(r.date);
+      return '<div class="line"><span>' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2) + '</span><span class="num">' +
         (r.strom != null ? fmt(r.strom, 0) + ' kWh' : '–') + ' · ' + (r.gas != null ? fmt(r.gas, 1) + ' m³' : '–') + '</span></div>';
     });
     $('lastList').innerHTML = lines.length ? lines.join('') : '<div style="font-size:16px;color:var(--soft);margin-top:10px">Noch keine Ablesung gespeichert.</div>';
     $('delLast').hidden = list.length === 0;
-    $('delLast').textContent = 'Letzten Eintrag löschen'; confirmDel = false;
+    $('delLast').textContent = 'Zuletzt eingetragenen löschen'; confirmDel = false;
+    if (!$('inDate').value) $('inDate').value = dayKey(new Date());
+  }
+  function meterWrite(body, msgEl, okText, after){
+    if (meterBusy) return; meterBusy = true;
+    msgEl.textContent = 'Wird gespeichert …';
+    meterReq(body).then(function(d){ gotMeter(d); msgEl.textContent = okText; if (after) after(); setTimeout(function(){ msgEl.textContent = ''; }, 5000); })
+      .catch(function(e){
+        var m = e && e.message;
+        msgEl.textContent = m === 'nokey' ? 'Erst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Zugangsschlüssel stimmt nicht.' : m === 'invalid' ? 'Bitte die Eingaben prüfen.' : 'Speichern hat nicht geklappt – keine Verbindung.';
+      })
+      .then(function(){ meterBusy = false; });
   }
   var confirmDel = false;
   $('delLast').addEventListener('click', function(){
     if (!confirmDel){ confirmDel = true; this.textContent = 'Wirklich löschen? Nochmal tippen'; return; }
-    var list = readStore(); list.pop(); writeStore(list); renderMeter();
+    meterWrite({ op: 'removeLast' }, $('formMsg'), 'Gelöscht.');
   });
   $('entryForm').addEventListener('submit', function(e){
     e.preventDefault();
-    var s = parseNum($('inStrom').value), g = parseNum($('inGas').value), msg = $('formMsg');
+    var date = $('inDate').value, s = parseNum($('inStrom').value), g = parseNum($('inGas').value), msg = $('formMsg');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)){ msg.textContent = 'Bitte ein Datum wählen.'; return; }
+    if (date > dayKey(new Date())){ msg.textContent = 'Das Datum liegt in der Zukunft.'; return; }
+    if (isNaN(s) || isNaN(g)){ msg.textContent = 'Bitte nur Zahlen eintragen.'; return; }
     if (s === null && g === null){ msg.textContent = 'Bitte mindestens einen Zählerstand eintragen.'; return; }
-    var list = readStore(), prev = list[list.length - 1];
-    if (prev && ((s !== null && prev.strom != null && s < prev.strom) || (g !== null && prev.gas != null && g < prev.gas))){
-      msg.textContent = 'Der Wert ist kleiner als die letzte Ablesung. Bitte prüfen.'; return;
-    }
-    list.push({ date: new Date().toISOString(), strom: s, gas: g });
-    if (!writeStore(list)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
-    $('inStrom').value = ''; $('inGas').value = '';
-    msg.textContent = 'Gespeichert.';
-    renderMeter();
-    setTimeout(function(){ msg.textContent = ''; }, 4000);
+    // Zählerstände können nur steigen: mit der Ablesung davor und danach vergleichen
+    var bad = false;
+    [['strom', s], ['gas', g]].forEach(function(p){
+      if (p[1] === null) return;
+      readingsOf(p[0]).forEach(function(r){ if ((r.date <= date && r[p[0]] > p[1]) || (r.date > date && r[p[0]] < p[1])) bad = true; });
+    });
+    if (bad){ msg.textContent = 'Passt nicht zu den anderen Ablesungen (Zähler zählen nur hoch). Bitte prüfen.'; return; }
+    meterWrite({ op: 'add', date: date, strom: s, gas: g }, msg, 'Gespeichert.', function(){ $('inStrom').value = ''; $('inGas').value = ''; $('inDate').value = dayKey(new Date()); });
   });
+  function fillTariff(){
+    var t = meter && meter.tariff && meter.tariff.strom;
+    if (!t || document.activeElement && document.activeElement.form === $('tariffForm')) return;
+    $('tGrund').value = fmt(t.grund, 2); $('tArbeit').value = fmt(t.arbeit * 100, 2);
+    $('tAbschlag').value = fmt(t.abschlag, 2); $('tStart').value = t.start;
+  }
+  $('tariffForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var g = parseNum($('tGrund').value), a = parseNum($('tArbeit').value), b = parseNum($('tAbschlag').value), st = $('tStart').value, msg = $('tariffMsg');
+    if ([g, a, b].some(function(v){ return v === null || isNaN(v); }) || !/^\d{4}-\d{2}-\d{2}$/.test(st)){ msg.textContent = 'Bitte alle vier Felder ausfüllen.'; return; }
+    if (a > 200){ msg.textContent = 'Arbeitspreis bitte in Cent angeben, z. B. 29,39.'; return; }
+    meterWrite({ op: 'tariff', kind: 'strom', grund: g, arbeit: Math.round(a * 1e4) / 1e6, abschlag: b, start: st }, msg, 'Tarif gespeichert.');
+  });
+  renderMeter(); fillTariff(); fetchMeter();
 
   /* ---------- Kalender (über den Vermittler, Schlüssel nur auf dem Tablet) ---------- */
   var calData = null, calError = '', calDay = '';
@@ -677,7 +809,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();

@@ -14,6 +14,8 @@
  * GET /climate → Temperatur und Luftfeuchte des Govee-Thermometers.
  * GET /list/einkauf → Einkaufsliste aus dem gemeinsamen Speicher (KV "DATA")
  * POST /list/einkauf  {op:"add",text} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
+ * GET /meter → Zählerstände und Tarif
+ * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start}
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -51,8 +53,9 @@ export default {
     const url = new URL(request.url);
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
-    if (!listName && !['/calendar', '/trash', '/climate'].includes(url.pathname)) return reply(404, { error: 'not found' });
-    if (request.method !== 'GET' && !(listName && request.method === 'POST')) return reply(405, { error: 'method' });
+    const writable = listName || url.pathname === '/meter';
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
     const auth = request.headers.get('Authorization') || '';
@@ -60,6 +63,7 @@ export default {
     if (!given || !(await sameSecret(given, env.ACCESS_KEY))) return reply(401, { error: 'unauthorized' });
 
     if (listName) return list(request, env, reply, listName);
+    if (url.pathname === '/meter') return meter(request, env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -396,6 +400,11 @@ async function climate(env, reply) {
 }
 
 /* ---------- Gemeinsame Listen (KV) ---------- */
+async function readBody(request, limit) {
+  const raw = await request.text();
+  if (raw.length > limit) throw new Error('too large');
+  return JSON.parse(raw);
+}
 async function list(request, env, reply, name) {
   if (!env.DATA) return reply(500, { error: 'not configured' });
   const key = 'list:' + name;
@@ -403,11 +412,7 @@ async function list(request, env, reply, name) {
   if (request.method === 'GET') return reply(200, data);
 
   let body;
-  try {
-    const raw = await request.text();
-    if (raw.length > 2000) return reply(413, { error: 'too large' });
-    body = JSON.parse(raw);
-  } catch (e) { return reply(400, { error: 'bad request' }); }
+  try { body = await readBody(request, 2000); } catch (e) { return reply(400, { error: 'bad request' }); }
 
   const items = data.items;
   const find = id => items.findIndex(x => x.id === id);
@@ -438,5 +443,59 @@ async function list(request, env, reply, name) {
   }
   data.updated = new Date().toISOString();
   await env.DATA.put(key, JSON.stringify(data));
+  return reply(200, data);
+}
+
+/* ---------- Zählerstände und Tarif (KV) ---------- */
+const MAX_READINGS = 500;
+function num(v, max) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return isFinite(n) && n >= 0 && n <= max ? Math.round(n * 1e6) / 1e6 : undefined;
+}
+function isDay(d) { return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(Date.parse(d)); }
+async function meter(request, env, reply) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  const data = (await env.DATA.get('meter', 'json')) || { readings: [], tariff: {}, updated: null };
+  if (request.method === 'GET') return reply(200, data);
+
+  let body;
+  try { body = await readBody(request, 60000); } catch (e) { return reply(400, { error: 'bad request' }); }
+  const R = data.readings;
+  const clean = r => {
+    const strom = num(r.strom, 1e8), gas = num(r.gas, 1e8);
+    if (!isDay(r.date) || strom === undefined || gas === undefined || (strom === null && gas === null)) return null;
+    return { id: crypto.randomUUID().slice(0, 8), date: r.date, strom, gas, added: new Date().toISOString() };
+  };
+  if (body.op === 'add') {
+    const r = clean(body);
+    if (!r) return reply(400, { error: 'invalid' });
+    if (R.length >= MAX_READINGS) return reply(409, { error: 'full' });
+    R.push(r);
+  } else if (body.op === 'import') {
+    // Einmalige Übernahme vom Tablet; doppelte Einträge (gleiches Datum und gleiche Werte) werden übersprungen
+    if (!Array.isArray(body.readings) || body.readings.length > MAX_READINGS) return reply(400, { error: 'invalid' });
+    for (const x of body.readings) {
+      const r = clean(x);
+      if (r && R.length < MAX_READINGS && !R.some(y => y.date === r.date && y.strom === r.strom && y.gas === r.gas)) R.push(r);
+    }
+  } else if (body.op === 'removeLast') {
+    if (R.length) {
+      let i = 0;
+      R.forEach((r, k) => { if ((r.added || '') >= (R[i].added || '')) i = k; });
+      R.splice(i, 1);
+    }
+  } else if (body.op === 'tariff') {
+    if (!['strom', 'gas'].includes(body.kind)) return reply(400, { error: 'invalid' });
+    const t = { grund: num(body.grund, 1000), arbeit: num(body.arbeit, 10), abschlag: num(body.abschlag, 10000), start: body.start };
+    if ([t.grund, t.arbeit, t.abschlag].some(v => v === undefined || v === null) || !isDay(t.start)) return reply(400, { error: 'invalid' });
+    data.tariff = data.tariff || {};
+    data.tariff[body.kind] = t;
+  } else {
+    return reply(400, { error: 'unknown op' });
+  }
+  R.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.added < b.added ? -1 : 1));
+  data.updated = new Date().toISOString();
+  await env.DATA.put('meter', JSON.stringify(data));
   return reply(200, data);
 }
