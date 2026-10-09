@@ -15,7 +15,7 @@
  * GET /list/einkauf → Einkaufsliste aus dem gemeinsamen Speicher (KV "DATA")
  * POST /list/einkauf  {op:"add",text} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
  * GET /meter → Zählerstände und Tarif
- * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start}
+ * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start,faktor?}
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -489,6 +489,10 @@ async function meter(request, env, reply) {
     if (!['strom', 'gas'].includes(body.kind)) return reply(400, { error: 'invalid' });
     const t = { grund: num(body.grund, 1000), arbeit: num(body.arbeit, 10), abschlag: num(body.abschlag, 10000), start: body.start };
     if ([t.grund, t.arbeit, t.abschlag].some(v => v === undefined || v === null) || !isDay(t.start)) return reply(400, { error: 'invalid' });
+    if (body.kind === 'gas') { // kWh pro m³ (Brennwert × Zustandszahl)
+      t.faktor = num(body.faktor, 20);
+      if (!t.faktor) return reply(400, { error: 'invalid' });
+    }
     data.tariff = data.tariff || {};
     data.tariff[body.kind] = t;
   } else {

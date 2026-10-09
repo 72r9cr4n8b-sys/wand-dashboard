@@ -79,15 +79,18 @@ button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 .subtitle{font-family:var(--display);font-size:36px}
 .chip{background:var(--tile);border-radius:999px;padding:10px 18px;font-size:15px;font-weight:700;color:var(--muted)}
 
-.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px;align-items:end;height:200px;margin-top:10px}
-.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin-top:6px}
-.verdict small{display:block;font-family:var(--body);font-size:17px;font-weight:600;color:var(--soft);margin-top:4px}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-gap:12px;margin-top:16px}
-.stat{background:rgba(255,255,255,.07);border-radius:16px;padding:12px 14px}
-.stat .k{font-size:14px;font-weight:700;color:#F7BE98}
-.stat .v{font-family:var(--display);font-size:26px;margin-top:2px}
+.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px;align-items:end;height:170px;margin-top:8px}
+.verdict{font-family:var(--display);font-size:26px;line-height:1.15;margin-top:6px}
+.verdict small{display:block;font-family:var(--body);font-size:16px;font-weight:600;color:var(--soft);margin-top:4px;line-height:1.35}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:10px;margin-top:12px}
+.stat{background:rgba(255,255,255,.07);border-radius:14px;padding:9px 12px}
+.stat .k{font-size:13px;font-weight:700;color:var(--kc,#F7BE98)}
+.stat .v{font-family:var(--display);font-size:22px;margin-top:1px}
+.seg{display:flex;background:var(--bg);border-radius:999px;padding:4px;margin-top:12px}
+.seg button{flex:1;height:44px;border:0;border-radius:999px;background:transparent;color:var(--soft);font-size:17px;font-weight:700;cursor:pointer;font-family:var(--body)}
+.seg button[aria-pressed="true"]{background:var(--tile2);color:var(--fg)}
 .stat .s{font-size:14px;color:var(--soft)}
-.note{font-size:14px;color:var(--soft);margin-top:12px}
+.note{font-size:13px;color:var(--soft);margin-top:10px;line-height:1.35}
 #verbrauch .list .line{padding:8px 12px;margin-top:6px}
 #verbrauch .ghost{margin-top:8px;padding:8px 14px}
 #verbrauch form.entry{padding:18px 22px}
@@ -257,10 +260,16 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     <div class="chip" id="entryCount">&nbsp;</div>
   </div>
   <div class="row">
-    <div class="col span2" style="grid-template-rows:auto 1fr">
-      <div class="card" style="background:#2E2219">
-        <div class="label" style="color:#F7BE98" id="checkHead">Strom · Abschlag-Check</div>
-        <div id="check"></div>
+    <div class="col span2" style="grid-template-rows:1fr auto">
+      <div class="row" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="card" style="background:#2E2219">
+          <div class="label" style="color:#F7BE98" id="checkHeadStrom">Strom · Abschlag-Check</div>
+          <div id="checkStrom"></div>
+        </div>
+        <div class="card" style="background:#172A45;--kc:#B6CFF2">
+          <div class="label" style="color:#B6CFF2" id="checkHeadGas">Gas · Abschlag-Check</div>
+          <div id="checkGas"></div>
+        </div>
       </div>
       <div class="row" style="grid-template-columns:repeat(2,minmax(0,1fr))">
         <div class="card" style="background:#2E2219">
@@ -359,7 +368,11 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     <div id="setMsg" role="status"></div>
   </div>
   <form id="tariffForm" class="card tform" novalidate>
-    <div style="font-family:var(--display);font-size:28px">Stromtarif</div>
+    <div style="font-family:var(--display);font-size:28px">Tarif</div>
+    <div class="seg" role="group" aria-label="Tarif für">
+      <button type="button" data-kind="strom" aria-pressed="true">Strom</button>
+      <button type="button" data-kind="gas" aria-pressed="false">Gas</button>
+    </div>
     <div class="pair">
       <label for="tGrund">Grundpreis (€ / Monat)<input id="tGrund" type="text" inputmode="decimal" autocomplete="off"></label>
       <label for="tArbeit">Arbeitspreis (Cent / kWh)<input id="tArbeit" type="text" inputmode="decimal" autocomplete="off"></label>
@@ -368,6 +381,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
       <label for="tAbschlag">Abschlag (€ / Monat)<input id="tAbschlag" type="text" inputmode="decimal" autocomplete="off"></label>
       <label for="tStart">Abrechnungsbeginn<input id="tStart" type="date"></label>
     </div>
+    <label for="tFaktor" id="tFaktorRow" hidden>Umrechnung kWh pro m³ (Brennwert × Zustandszahl, steht auf der Gasrechnung)<input id="tFaktor" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 10,9"></label>
     <div class="btnrow"><button class="btn main" type="submit">Tarif speichern</button></div>
     <div id="tariffMsg" role="status" style="font-size:17px;font-weight:700;min-height:24px;margin-top:12px"></div>
   </form>
@@ -619,44 +633,65 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     });
     el.innerHTML = html + '</div>';
   }
-  // Abschlag-Check: Hochrechnung aus dem Tagesdurchschnitt seit Abrechnungsbeginn
-  function stromCheck(){
-    var t = meter && meter.tariff && meter.tariff.strom;
-    if (!t) return { msg: 'Trag deinen Stromtarif unter Einstellungen (Zahnrad) ein.' };
-    var start = parseDay(t.start), list = readingsOf('strom'), base = null, best = Infinity;
+  // Abschlag-Check: Hochrechnung bis zum Ende des Abrechnungsjahrs.
+  // Gas: Heizbedarf nach Gradtagszahlen (Promille je Monat, Jan–Dez) plus 15 % gleichmäßig für Warmwasser.
+  var GAS_PROFILE = [170, 150, 130, 80, 40, 13.33, 13.33, 13.34, 30, 80, 120, 160];
+  var KINDS = {
+    strom: { name: 'Strom', unit: 'kWh', dec: 0, profile: null },
+    gas:   { name: 'Gas',   unit: 'm³',  dec: 0, profile: GAS_PROFILE }
+  };
+  function shareBetween(a, b, profile){ // Anteil am Jahresverbrauch zwischen zwei Tagen
+    var sum = 0, d = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    while (d < b){
+      var m = d.getMonth(), dim = new Date(d.getFullYear(), m + 1, 0).getDate();
+      sum += (0.85 * profile[m] / 1000 + 0.15 / 12) / dim;
+      d = new Date(d.getFullYear(), m, d.getDate() + 1);
+    }
+    return sum;
+  }
+  function check(kind){
+    var k = KINDS[kind], t = meter && meter.tariff && meter.tariff[kind];
+    if (!t) return { msg: 'Trag deinen ' + k.name + 'tarif unter Einstellungen (Zahnrad) ein.' };
+    var start = parseDay(t.start), list = readingsOf(kind), base = null, best = Infinity;
     list.forEach(function(r){ var dist = Math.abs(parseDay(r.date) - start) / 86400000; if (dist <= 31 && dist < best){ best = dist; base = r; } });
     if (!base) return { msg: 'Es fehlt eine Ablesung um den ' + dayLabel(t.start) + ' (Abrechnungsbeginn).' };
-    var latest = list[list.length - 1], days = (parseDay(latest.date) - parseDay(base.date)) / 86400000;
+    var latest = list[list.length - 1], b0 = parseDay(base.date), b1 = parseDay(latest.date), days = (b1 - b0) / 86400000;
     if (days < 14) return { msg: 'Trag einen aktuellen Zählerstand ein – dann rechne ich hoch, ob dein Abschlag reicht.' };
     var end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
-    var yearDays = Math.round((end - start) / 86400000);
-    var kwh = latest.strom - base.strom, perDay = kwh / days, months = days / (yearDays / 12);
-    var yearKwh = perDay * yearDays, yearCost = yearKwh * t.arbeit + 12 * t.grund, yearPaid = 12 * t.abschlag;
+    var yearDays = Math.round((end - start) / 86400000), months = days / (yearDays / 12);
+    var factor = kind === 'gas' ? (t.faktor || 10.9) : 1;
+    var units = latest[kind] - base[kind], kwh = units * factor;
+    var share = k.profile ? shareBetween(b0, b1, k.profile) : days / yearDays;
+    var yearKwh = kwh / share, yearCost = yearKwh * t.arbeit + 12 * t.grund;
     return {
-      t: t, base: base, latest: latest, kwh: kwh, perDay: perDay, yearKwh: yearKwh, yearCost: yearCost,
+      k: k, t: t, base: base, latest: latest, units: units, kwh: kwh, perDay: units / days, share: share,
+      yearUnits: yearKwh / factor, yearKwh: yearKwh, yearCost: yearCost,
       costSoFar: kwh * t.arbeit + months * t.grund, paidSoFar: months * t.abschlag,
-      diff: yearPaid - yearCost, suggest: Math.ceil(yearCost / 12),
+      diff: 12 * t.abschlag - yearCost, suggest: Math.ceil(yearCost / 12),
       endLabel: dayLabel(dayKey(new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1))),
-      newYear: parseDay(latest.date) >= end
+      newYear: b1 >= end
     };
   }
-  function renderCheck(){
-    var c = stromCheck(), el = $('check');
-    if (c.msg){ el.innerHTML = '<div class="verdict" style="font-size:24px">' + esc(c.msg) + '</div>'; $('checkHead').textContent = 'Strom · Abschlag-Check'; return; }
-    $('checkHead').textContent = 'Strom · Abrechnungsjahr ' + dayLabel(c.t.start) + ' – ' + c.endLabel;
+  function renderCheck(kind){
+    var c = check(kind), el = $(kind === 'gas' ? 'checkGas' : 'checkStrom'), head = $(kind === 'gas' ? 'checkHeadGas' : 'checkHeadStrom');
+    var name = KINDS[kind].name;
+    if (c.msg){ el.innerHTML = '<div class="verdict" style="font-size:21px">' + esc(c.msg) + '</div>'; head.textContent = name + ' · Abschlag-Check'; return; }
+    head.textContent = name + ' · ' + dayLabel(c.t.start) + ' – ' + c.endLabel;
     var ok = c.diff >= 0, close = Math.abs(c.diff) < 30;
-    var head = ok ? (close ? 'Abschlag passt genau' : 'Abschlag reicht') : 'Abschlag reicht nicht';
-    var sub = ok ? 'Voraussichtlich ca. ' + euro(c.diff) + ' Guthaben zum ' + c.endLabel + '.'
-                 : 'Voraussichtlich ca. ' + euro(-c.diff) + ' Nachzahlung zum ' + c.endLabel + '. Empfohlener Abschlag: ' + euro(c.suggest) + ' statt ' + euro(c.t.abschlag) + '.';
-    el.innerHTML = '<div class="verdict" style="color:' + (ok ? '#8ED39A' : '#FF9A7A') + '">' + head + '<small>' + sub + '</small></div>' +
+    var sub = ok ? 'Voraussichtlich ca. ' + euro(c.diff) + ' Guthaben.'
+                 : 'Voraussichtlich ca. ' + euro(-c.diff) + ' Nachzahlung. Empfohlen: ' + euro(c.suggest) + ' statt ' + euro(c.t.abschlag) + ' im Monat.';
+    var used = kind === 'gas' ? fmt(c.units, 0) + ' m³' : fmt(c.kwh, 0) + ' kWh';
+    var usedSub = kind === 'gas' ? '≈ ' + fmt(c.kwh, 0) + ' kWh' : fmt(c.perDay, 1) + ' kWh pro Tag';
+    el.innerHTML = '<div class="verdict" style="color:' + (ok ? '#8ED39A' : '#FF9A7A') + '">' + (ok ? (close ? 'Abschlag passt knapp' : 'Abschlag reicht') : 'Abschlag reicht nicht') + '<small>' + sub + '</small></div>' +
       '<div class="stats">' +
-        '<div class="stat"><div class="k">Verbrauch bisher</div><div class="v num">' + fmt(c.kwh, 0) + ' kWh</div><div class="s">' + fmt(c.perDay, 1) + ' kWh pro Tag</div></div>' +
-        '<div class="stat"><div class="k">Kosten bisher</div><div class="v num">' + euro(c.costSoFar) + '</div><div class="s">inkl. Grundpreis</div></div>' +
-        '<div class="stat"><div class="k">Abschläge bisher</div><div class="v num">' + euro(c.paidSoFar) + '</div><div class="s">' + euro(c.t.abschlag) + ' pro Monat</div></div>' +
+        '<div class="stat"><div class="k">Verbrauch bisher</div><div class="v num">' + used + '</div><div class="s">' + usedSub + '</div></div>' +
+        '<div class="stat"><div class="k">Kosten bisher</div><div class="v num">' + euro(c.costSoFar) + '</div><div class="s">Abschläge: ' + euro(c.paidSoFar) + '</div></div>' +
         '<div class="stat"><div class="k">Hochrechnung Jahr</div><div class="v num">' + euro(c.yearCost) + '</div><div class="s">' + fmt(c.yearKwh, 0) + ' kWh</div></div>' +
+        '<div class="stat"><div class="k">Abschläge Jahr</div><div class="v num">' + euro(12 * c.t.abschlag) + '</div><div class="s">' + euro(c.t.abschlag) + ' pro Monat</div></div>' +
       '</div>' +
-      '<div class="note">' + (c.newYear ? 'Das Abrechnungsjahr ist vorbei – bitte in den Einstellungen den neuen Abrechnungsbeginn und Tarif eintragen.' :
-        'Hochgerechnet aus deinem Tagesdurchschnitt zwischen ' + dayLabel(c.base.date) + ' und ' + dayLabel(c.latest.date) + '. Im Winter ist der Verbrauch meist etwas höher.') + '</div>';
+      '<div class="note">' + (c.newYear ? 'Das Abrechnungsjahr ist vorbei – bitte in den Einstellungen den neuen Abrechnungsbeginn eintragen.' :
+        kind === 'gas' ? 'Bis ' + dayLabel(c.latest.date) + ' sind ca. ' + fmt(c.share * 100, 0) + ' % des Jahresbedarfs verbraucht (Heizsaison berücksichtigt). Umrechnung ' + fmt(c.t.faktor || 10.9, 2) + ' kWh/m³.'
+        : 'Aus dem Tagesdurchschnitt ' + dayLabel(c.base.date) + ' bis ' + dayLabel(c.latest.date) + '. Im Winter meist etwas mehr.') + '</div>';
   }
   function renderMeter(){
     var list = meter ? meter.readings : [];
@@ -665,7 +700,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
       list.length + (list.length === 1 ? ' Ablesung' : ' Ablesungen');
     chart($('chartStrom'), intervals('strom'), '#F29E6B', '#5A3E2B', 'kWh', 0);
     chart($('chartGas'), intervals('gas'), '#8DB8F2', '#2C4A73', 'm³', 1);
-    renderCheck();
+    renderCheck('strom'); renderCheck('gas');
     var lines = list.slice(-3).reverse().map(function(r){
       var d = parseDay(r.date);
       return '<div class="line"><span>' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2) + '</span><span class="num">' +
@@ -707,18 +742,32 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     if (bad){ msg.textContent = 'Passt nicht zu den anderen Ablesungen (Zähler zählen nur hoch). Bitte prüfen.'; return; }
     meterWrite({ op: 'add', date: date, strom: s, gas: g }, msg, 'Gespeichert.', function(){ $('inStrom').value = ''; $('inGas').value = ''; $('inDate').value = dayKey(new Date()); });
   });
+  var tKind = 'strom';
   function fillTariff(){
-    var t = meter && meter.tariff && meter.tariff.strom;
-    if (!t || document.activeElement && document.activeElement.form === $('tariffForm')) return;
-    $('tGrund').value = fmt(t.grund, 2); $('tArbeit').value = fmt(t.arbeit * 100, 2);
-    $('tAbschlag').value = fmt(t.abschlag, 2); $('tStart').value = t.start;
+    var t = meter && meter.tariff && meter.tariff[tKind];
+    $('tFaktorRow').hidden = tKind !== 'gas';
+    if (document.activeElement && document.activeElement.form === $('tariffForm') && document.activeElement.tagName === 'INPUT') return;
+    $('tGrund').value = t ? fmt(t.grund, 2) : ''; $('tArbeit').value = t ? fmt(t.arbeit * 100, 2) : '';
+    $('tAbschlag').value = t ? fmt(t.abschlag, 2) : ''; $('tStart').value = t ? t.start : '';
+    $('tFaktor').value = t && t.faktor ? fmt(t.faktor, 3) : '';
   }
+  $('tariffForm').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-kind]') : null;
+    if (!b) return;
+    tKind = b.getAttribute('data-kind');
+    [].forEach.call(this.querySelectorAll('[data-kind]'), function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    $('tariffMsg').textContent = '';
+    fillTariff();
+  });
   $('tariffForm').addEventListener('submit', function(e){
     e.preventDefault();
     var g = parseNum($('tGrund').value), a = parseNum($('tArbeit').value), b = parseNum($('tAbschlag').value), st = $('tStart').value, msg = $('tariffMsg');
-    if ([g, a, b].some(function(v){ return v === null || isNaN(v); }) || !/^\d{4}-\d{2}-\d{2}$/.test(st)){ msg.textContent = 'Bitte alle vier Felder ausfüllen.'; return; }
+    var f = tKind === 'gas' ? parseNum($('tFaktor').value) : 1;
+    if ([g, a, b, f].some(function(v){ return v === null || isNaN(v); }) || !/^\d{4}-\d{2}-\d{2}$/.test(st)){ msg.textContent = 'Bitte alle Felder ausfüllen.'; return; }
     if (a > 200){ msg.textContent = 'Arbeitspreis bitte in Cent angeben, z. B. 29,39.'; return; }
-    meterWrite({ op: 'tariff', kind: 'strom', grund: g, arbeit: Math.round(a * 1e4) / 1e6, abschlag: b, start: st }, msg, 'Tarif gespeichert.');
+    var body = { op: 'tariff', kind: tKind, grund: g, arbeit: Math.round(a * 1e4) / 1e6, abschlag: b, start: st };
+    if (tKind === 'gas') body.faktor = f;
+    meterWrite(body, msg, (tKind === 'gas' ? 'Gastarif' : 'Stromtarif') + ' gespeichert.');
   });
   renderMeter(); fillTariff(); fetchMeter();
 
