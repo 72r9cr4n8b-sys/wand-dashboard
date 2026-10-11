@@ -29,7 +29,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:
 button{font-family:var(--body)}
 #stage{position:absolute;left:0;top:0;width:1280px;height:800px;transform-origin:0 0;padding:28px 32px 24px}
 .view{position:absolute;top:28px;left:32px;right:32px;bottom:24px;display:grid;grid-row-gap:18px}
-.view[hidden]{display:none!important}
+.view[hidden],[hidden]{display:none!important}
 #home{grid-template-rows:400px 1fr 62px}
 .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-gap:18px;min-height:0}
 .span2{grid-column:span 2}
@@ -159,6 +159,18 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .chips button:before{content:'+ ';color:#8ED39A;font-weight:700}
 .badge{background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+/* Kalender: Reiter und Geburtstage */
+.subhead .seg{margin:0;width:360px}
+.wev.bday{border-left-color:#F4A7B9}
+.bdcard{display:flex;flex-direction:column}
+.bdlist{overflow-y:auto;min-height:0;margin-top:6px}
+.bdi{display:flex;align-items:center;width:100%;background:var(--tile2);border:0;border-left:6px solid transparent;border-radius:14px;padding:10px 14px;margin-top:8px;color:var(--fg);text-align:left;cursor:pointer;font-family:var(--body)}
+.bdi.near{border-left-color:#F4A7B9;background:#3A2638}
+.bdi .dt{width:92px;flex-shrink:0;font-family:var(--display);font-size:20px}
+.bdi .nm{font-size:19px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bdi .sb{font-size:14px;font-weight:600;color:var(--soft)}
+.tform select{width:100%;height:50px;border-radius:14px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:19px;padding:0 10px;font-family:var(--body);margin-top:6px}
+
 /* Pinnwand */
 .board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-gap:16px;align-items:start;align-content:start;overflow-y:auto;min-height:0;padding-bottom:4px}
 .note{display:block;width:100%;margin:0;border:0;border-radius:20px;padding:16px 18px 12px;text-align:left;cursor:pointer;font-family:var(--body);box-shadow:0 6px 18px rgba(0,0,0,.25)}
@@ -206,6 +218,8 @@ html.compact nav button{position:relative;flex-direction:column;justify-content:
 html.compact nav button .round{width:34px;height:34px;margin:0 0 3px}
 html.compact nav button .round svg{width:19px;height:19px}
 html.compact nav button[aria-current="page"]{background:var(--tile)}
+#notesBadge::after{content:' neu'}
+html.compact #notesBadge::after{content:''}
 html.compact nav .badge{position:absolute;top:0;left:calc(50% + 8px);margin:0;font-size:11px;padding:1px 6px}
 html.compact .subhead{flex-wrap:wrap;row-gap:10px}
 html.compact .subhead > div:empty{display:none}
@@ -227,6 +241,7 @@ html.compact .chart{height:150px}
 html.compact .board{grid-template-columns:minmax(0,1fr);grid-gap:12px;overflow:visible}
 @media (min-width:600px){ html.compact .board{grid-template-columns:repeat(2,minmax(0,1fr))} }
 html.compact .sheet{padding:16px}
+html.compact .subhead .seg{order:2;width:100%}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -381,10 +396,34 @@ html.compact .sheet{padding:16px}
 <section id="kalender" class="view sub" aria-label="Kalender" hidden>
   <div class="subhead">
     <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
-    <div class="subtitle">Die nächsten 7 Tage</div>
+    <div class="seg" id="calTabs" role="group" aria-label="Kalender-Ansicht">
+      <button type="button" data-caltab="termine" aria-pressed="true">Nächste 7 Tage</button>
+      <button type="button" data-caltab="geb" aria-pressed="false">Geburtstage</button>
+    </div>
     <div class="chip" id="calUpdated">&nbsp;</div>
   </div>
   <div id="calWeek" class="week"></div>
+  <div id="bdPanel" class="row" hidden>
+    <div class="card span2 bdcard">
+      <div class="label" style="color:#F4A7B9">Alle Geburtstage · der nächste zuerst</div>
+      <div id="bdList" class="bdlist"></div>
+    </div>
+    <form id="bdForm" class="card tform" novalidate autocomplete="off">
+      <div id="bdTitle" style="font-family:var(--display);font-size:26px">Neuer Geburtstag</div>
+      <label for="bdName">Name<input id="bdName" type="text" maxlength="60" placeholder="z. B. Anna"></label>
+      <div class="pair">
+        <label for="bdDay">Tag<input id="bdDay" type="text" inputmode="numeric" maxlength="2" placeholder="16"></label>
+        <label for="bdMonth">Monat<select id="bdMonth"></select></label>
+      </div>
+      <label for="bdYear">Geburtsjahr (optional, für das Alter)<input id="bdYear" type="text" inputmode="numeric" maxlength="4" placeholder="z. B. 1986"></label>
+      <div class="btnrow">
+        <button class="btn main" type="submit" style="background:#F4A7B9;color:#3A0D18">Speichern</button>
+        <button class="btn alt" type="button" id="bdCancel" hidden>Abbrechen</button>
+        <button class="btn alt" type="button" id="bdDel" hidden>Löschen</button>
+      </div>
+      <div id="bdMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:10px"></div>
+    </form>
+  </div>
 </section>
 
 <!-- ===== Müllabfuhr ===== -->
@@ -529,6 +568,9 @@ html.compact .sheet{padding:16px}
   var SHOP_URL = API + '/list/einkauf';
   var METER_URL = API + '/meter';
   var NOTES_URL = API + '/notes';
+  var BD_URL = API + '/birthdays';
+  var BD_CACHE = 'wanddash.birthdays.v1';
+  var BD_DAYS = 7;                    // so viele Tage vorher auf Geburtstage hinweisen
   var NOTES_SEEN = 'wanddash.notes.seen';
   var CAL_KEY = 'wanddash.calkey.v1';
   var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
@@ -568,7 +610,7 @@ html.compact .sheet{padding:16px}
     window.scrollTo(0, 0);
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
     if (id === 'verbrauch'){ renderMeter(); fetchMeter(); }
-    if (id === 'kalender') renderCalendar();
+    if (id === 'kalender'){ renderCalendar(); fetchBirthdays(); }
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
     if (id === 'einstellungen'){ openSettings(); fillTariff(); }
@@ -936,12 +978,16 @@ html.compact .sheet{padding:16px}
         (hint ? '<div class="evt"><div class="bar" style="background:var(--orange)"></div><div class="tt" style="color:var(--soft)">' + hint + '</div></div>' : '');
     } else {
       var list = [];
+      // Geburtstage der nächsten Tage zuerst (höchstens zwei Zeilen), dann Termine von heute und morgen
+      upcomingBirthdays(BD_DAYS).slice(0, 2).forEach(function(b){ list.push({ b: b }); });
       eventsOn(today).forEach(function(e){ list.push({ e: e, k: today, tag: '' }); });
       eventsOn(tomorrow).forEach(function(e){ if (e.start === tomorrow || !e.allDay) list.push({ e: e, k: tomorrow, tag: 'Morgen' }); });
       if (!list.length){
         home.innerHTML = '<div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt" style="color:var(--soft)">Heute und morgen keine Termine</div></div>';
       } else {
         home.innerHTML = list.slice(0, 3).map(function(x){
+          if (x.b) return '<div class="evt"><div class="bar" style="background:#F4A7B9"></div><div class="tm num">' + esc(bdWhen(x.b)) +
+            '</div><div class="tt">' + esc(bdText(x.b)) + '</div></div>';
           return '<div class="evt"><div class="bar" style="background:' + (x.tag ? 'var(--orange)' : 'var(--violet)') + '"></div><div class="tm num">' + esc(timeLabel(x.e, x.k)) +
             '</div><div class="tt">' + esc(x.e.title) + '</div>' + (x.tag ? '<div class="tag">' + x.tag + '</div>' : '') + '</div>';
         }).join('');
@@ -953,11 +999,13 @@ html.compact .sheet{padding:16px}
     var html = '';
     for (var i = 0; i < 7; i++){
       var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i), k = dayKey(d);
-      var evs = eventsOn(k);
+      var evs = eventsOn(k), bds = birthdaysOn(d);
       html += '<div class="wday' + (i === 0 ? ' today' : '') + '"><h3><span>' + (i === 0 ? 'Heute' : i === 1 ? 'Morgen' : DAYS[d.getDay()]) + '</span>' +
         DAYS_SHORT[d.getDay()] + ' ' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + '</h3>';
+      html += bds.map(function(b){ return '<div class="wev bday"><div class="t">Geburtstag</div><div class="n">' + esc(b.p.name) + (b.age ? ' (' + b.age + ')' : '') + '</div></div>'; }).join('');
       if (!calData) {}
-      else if (!evs.length) html += '<div class="wnone">frei</div>';
+      else if (!evs.length && !bds.length) html += '<div class="wnone">frei</div>';
+      else if (!evs.length) {}
       else html += evs.map(function(e){
         return '<div class="wev' + (e.allDay ? ' all' : '') + '"><div class="t num">' + esc(timeLabel(e, k) + (!e.allDay && e.start === k ? '–' + e.endTime : '')) +
           '</div><div class="n">' + esc(e.title) + '</div></div>';
@@ -966,6 +1014,7 @@ html.compact .sheet{padding:16px}
     }
     $('calWeek').innerHTML = html;
     var up = calData ? new Date(calData.updated) : null;
+    if (calTab === 'geb') return;
     $('calUpdated').textContent = !calData ? (calError === 'nokey' ? 'Nicht verbunden' : calError === 'auth' ? 'Schlüssel falsch' : 'Nicht erreichbar')
       : (calError === 'net' ? 'Stand ' : 'Aktualisiert ') + pad(up.getHours()) + ':' + pad(up.getMinutes());
   }
@@ -981,7 +1030,7 @@ html.compact .sheet{padding:16px}
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -1191,6 +1240,118 @@ html.compact .sheet{padding:16px}
   }, 60 * 1000);
   fetchShop();
 
+  /* ---------- Geburtstage (gemeinsamer Speicher beim Vermittler) ---------- */
+  var bdData = null, bdError = '', bdBusy = false, bdEditId = null, confirmBdDel = false, calTab = 'termine';
+  try { bdData = JSON.parse(localStorage.getItem(BD_CACHE) || 'null'); } catch (e) { bdData = null; }
+  function bdReq(body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(BD_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (r.status === 400) throw new Error('invalid');
+      if (r.status === 404) throw new Error('gone');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    });
+  }
+  function gotBirthdays(d){
+    bdData = d; bdError = '';
+    try { localStorage.setItem(BD_CACHE, JSON.stringify(d)); } catch (e) {}
+    renderCalendar(); renderBirthdays();
+  }
+  function fetchBirthdays(){
+    bdReq().then(gotBirthdays).catch(function(e){ bdError = (e && e.message) || 'net'; renderBirthdays(); });
+  }
+  // Nächster Geburtstag ab heute; 29. Februar wird in Nicht-Schaltjahren am 28. gefeiert
+  function bdOn(p, y){ var d = p.day; if (p.month === 2 && d === 29 && new Date(y, 1, 29).getMonth() !== 1) d = 28; return new Date(y, p.month - 1, d); }
+  function nextBirthday(p, now){
+    var t = new Date(now.getFullYear(), now.getMonth(), now.getDate()), o = bdOn(p, t.getFullYear());
+    if (o < t) o = bdOn(p, t.getFullYear() + 1);
+    return { p: p, date: o, days: Math.round((o - t) / 86400000), age: p.year ? o.getFullYear() - p.year : null };
+  }
+  function allBirthdays(){
+    var now = new Date();
+    return (bdData ? bdData.people : []).map(function(p){ return nextBirthday(p, now); })
+      .sort(function(a, b){ return (a.days - b.days) || a.p.name.localeCompare(b.p.name, 'de'); });
+  }
+  function upcomingBirthdays(n){ return allBirthdays().filter(function(b){ return b.days <= n; }); }
+  function birthdaysOn(d){ return allBirthdays().filter(function(b){ return b.date.getTime() === new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }); }
+  function bdWhen(b){ return b.days === 0 ? 'Heute' : b.days === 1 ? 'Morgen' : DAYS_SHORT[b.date.getDay()] + ' ' + b.date.getDate() + '.'; }
+  function bdText(b){
+    if (b.days === 0) return b.p.name + ' hat Geburtstag' + (b.age ? ' (' + b.age + ')' : '');
+    return b.p.name + (b.age ? ' wird ' + b.age : ' hat Geburtstag');
+  }
+  function renderBirthdays(){
+    var list = allBirthdays();
+    if (calTab === 'geb') $('calUpdated').textContent = bdData ? list.length + (list.length === 1 ? ' Geburtstag' : ' Geburtstage') :
+      bdError === 'nokey' ? 'Nicht verbunden' : bdError === 'auth' ? 'Schlüssel falsch' : bdError ? 'Nicht erreichbar' : ' ';
+    $('bdList').innerHTML = !list.length ? '<div style="font-size:18px;color:var(--soft);margin-top:12px">Noch keine Geburtstage eingetragen. Rechts kannst du den ersten anlegen.</div>' :
+      list.map(function(b){
+        var when = b.days === 0 ? 'heute' : b.days === 1 ? 'morgen' : 'in ' + b.days + ' Tagen';
+        return '<button type="button" class="bdi' + (b.days <= BD_DAYS ? ' near' : '') + '" data-bd="' + esc(b.p.id) + '">' +
+          '<span class="dt num">' + b.date.getDate() + '. ' + MONTHS_SHORT[b.date.getMonth()] + '</span>' +
+          '<span style="min-width:0"><span class="nm" style="display:block">' + esc(b.p.name) + '</span>' +
+          '<span class="sb">' + (b.age ? 'wird ' + b.age + ' · ' : '') + when + '</span></span></button>';
+      }).join('');
+  }
+  function setCalTab(t){
+    calTab = t;
+    [].forEach.call(document.querySelectorAll('#calTabs [data-caltab]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-caltab') === t)); });
+    $('calWeek').hidden = t !== 'termine'; $('bdPanel').hidden = t !== 'geb';
+    if (t === 'geb') renderBirthdays(); else renderCalendar();
+  }
+  function bdForm(p){
+    bdEditId = p ? p.id : null; confirmBdDel = false;
+    $('bdTitle').textContent = p ? 'Geburtstag bearbeiten' : 'Neuer Geburtstag';
+    $('bdName').value = p ? p.name : ''; $('bdDay').value = p ? p.day : '';
+    $('bdMonth').value = p ? String(p.month) : '1'; $('bdYear').value = p && p.year ? p.year : '';
+    $('bdCancel').hidden = $('bdDel').hidden = !p;
+    $('bdDel').textContent = 'Löschen';
+  }
+  $('bdMonth').innerHTML = MONTHS.map(function(m, i){ return '<option value="' + (i + 1) + '">' + m + '</option>'; }).join('');
+  $('calTabs').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-caltab]') : null;
+    if (b) setCalTab(b.getAttribute('data-caltab'));
+  });
+  $('bdList').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-bd]') : null, p = null;
+    if (!b || !bdData) return;
+    bdData.people.forEach(function(x){ if (x.id === b.getAttribute('data-bd')) p = x; });
+    bdForm(p); $('bdMsg').textContent = '';
+    if (document.documentElement.classList.contains('compact')) $('bdForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  function bdWrite(body, okText){
+    if (bdBusy) return; bdBusy = true;
+    $('bdMsg').textContent = 'Wird gespeichert …';
+    bdReq(body).then(function(d){ gotBirthdays(d); bdForm(null); $('bdMsg').textContent = okText; setTimeout(function(){ $('bdMsg').textContent = ''; }, 4000); })
+      .catch(function(e){
+        var m = e && e.message;
+        $('bdMsg').textContent = m === 'invalid' ? 'Dieses Datum gibt es nicht – bitte prüfen.' : m === 'gone' ? 'Der Eintrag wurde inzwischen auf einem anderen Gerät gelöscht.' :
+          m === 'nokey' ? 'Erst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Zugangsschlüssel stimmt nicht.' : 'Speichern hat nicht geklappt – keine Verbindung.';
+        if (m === 'gone'){ bdForm(null); fetchBirthdays(); }
+      })
+      .then(function(){ bdBusy = false; });
+  }
+  $('bdForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = $('bdName').value.trim(), day = parseInt($('bdDay').value, 10), month = parseInt($('bdMonth').value, 10);
+    var yRaw = $('bdYear').value.trim(), year = yRaw ? parseInt(yRaw, 10) : null;
+    if (!name){ $('bdMsg').textContent = 'Bitte einen Namen eintragen.'; return; }
+    if (!(day >= 1 && day <= 31)){ $('bdMsg').textContent = 'Bitte den Tag als Zahl eintragen (1–31).'; return; }
+    if (yRaw && !(year >= 1900 && year <= new Date().getFullYear())){ $('bdMsg').textContent = 'Das Geburtsjahr sieht nicht richtig aus.'; return; }
+    var body = { op: bdEditId ? 'edit' : 'add', name: name, day: day, month: month, year: year };
+    if (bdEditId) body.id = bdEditId;
+    bdWrite(body, bdEditId ? 'Geändert.' : 'Gespeichert.');
+  });
+  $('bdCancel').addEventListener('click', function(){ bdForm(null); $('bdMsg').textContent = ''; });
+  $('bdDel').addEventListener('click', function(){
+    if (!confirmBdDel){ confirmBdDel = true; this.textContent = 'Wirklich löschen?'; return; }
+    if (bdEditId) bdWrite({ op: 'remove', id: bdEditId }, 'Gelöscht.');
+  });
+  bdForm(null); renderBirthdays(); fetchBirthdays(); setInterval(fetchBirthdays, 30 * 60 * 1000);
+
   /* ---------- Pinnwand (gemeinsamer Speicher beim Vermittler) ---------- */
   var notesData = null, notesBusy = false, editId = null, editColor = 'gelb', confirmNoteDel = false;
   function notesReq(body){
@@ -1213,7 +1374,7 @@ html.compact .sheet{padding:16px}
     if (!seen && notesData) markNotesSeen(true); // erstes Mal auf diesem Gerät: nichts als neu zählen
     if (notesData && seen) notesData.notes.forEach(function(x){ if (x.created > seen) n++; });
     if (!$('pinnwand').hidden) n = 0;
-    $('notesBadge').hidden = !n; $('notesBadge').textContent = n ? n + ' neu' : '';
+    $('notesBadge').hidden = !n; $('notesBadge').textContent = n || '';
   }
   function fetchNotes(){
     notesReq().then(function(d){ notesData = d; renderNotes(); if (!$('pinnwand').hidden) markNotesSeen(); })
@@ -1300,7 +1461,7 @@ html.compact .sheet{padding:16px}
   document.addEventListener('visibilitychange', function(){
     if (document.hidden || Date.now() - lastWake < 60 * 1000) return;
     lastWake = Date.now();
-    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes();
+    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays();
     if (!$('verbrauch').hidden) fetchMeter();
   });
 

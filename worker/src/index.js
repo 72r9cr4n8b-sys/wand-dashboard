@@ -18,6 +18,8 @@
  * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start,faktor?}
  * GET /notes → Zettel der Pinnwand
  * POST /notes  {op:"add",text,color} | {op:"edit",id,text,color} | {op:"pin",id} | {op:"remove",id}
+ * GET /birthdays → Geburtstagsliste
+ * POST /birthdays  {op:"add",name,day,month,year?} | {op:"edit",id,name,day,month,year?} | {op:"remove",id}
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -55,8 +57,8 @@ export default {
     const url = new URL(request.url);
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
-    const writable = listName || url.pathname === '/meter' || url.pathname === '/notes';
-    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    const writable = listName || ['/meter', '/notes', '/birthdays'].includes(url.pathname);
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays'].includes(url.pathname)) return reply(404, { error: 'not found' });
     if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
@@ -67,6 +69,7 @@ export default {
     if (listName) return list(request, env, reply, listName);
     if (url.pathname === '/meter') return meter(request, env, reply);
     if (url.pathname === '/notes') return notes(request, env, reply);
+    if (url.pathname === '/birthdays') return birthdays(request, env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -568,5 +571,43 @@ async function notes(request, env, reply) {
   }
   data.updated = now;
   await env.DATA.put('notes', JSON.stringify(data));
+  return reply(200, data);
+}
+
+/* ---------- Geburtstage (KV) ---------- */
+const MAX_BIRTHDAYS = 300;
+async function birthdays(request, env, reply) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  const data = (await env.DATA.get('birthdays', 'json')) || { people: [], updated: null };
+  if (request.method === 'GET') return reply(200, data);
+
+  let body;
+  try { body = await readBody(request, 2000); } catch (e) { return reply(400, { error: 'bad request' }); }
+  const P = data.people;
+  const i = P.findIndex(x => x.id === body.id);
+  if (body.op === 'remove') {
+    if (i >= 0) P.splice(i, 1);
+  } else if (body.op === 'add' || body.op === 'edit') {
+    const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const day = Number(body.day), month = Number(body.month);
+    const year = body.year === null || body.year === undefined || body.year === '' ? null : Number(body.year);
+    const thisYear = new Date().getUTCFullYear();
+    // 29. Februar ist erlaubt; mit Jahr muss das Datum in genau diesem Jahr existieren
+    const valid = name && Number.isInteger(month) && month >= 1 && month <= 12 && Number.isInteger(day) && day >= 1 &&
+      day <= new Date(Date.UTC(year || 2000, month, 0)).getUTCDate() &&
+      (year === null || (Number.isInteger(year) && year >= 1900 && year <= thisYear));
+    if (!valid) return reply(400, { error: 'invalid' });
+    if (body.op === 'add') {
+      if (P.length >= MAX_BIRTHDAYS) return reply(409, { error: 'full' });
+      P.push({ id: crypto.randomUUID().slice(0, 8), name, day, month, year });
+    } else {
+      if (i < 0) return reply(404, { error: 'gone' });
+      Object.assign(P[i], { name, day, month, year });
+    }
+  } else {
+    return reply(400, { error: 'unknown op' });
+  }
+  data.updated = new Date().toISOString();
+  await env.DATA.put('birthdays', JSON.stringify(data));
   return reply(200, data);
 }
