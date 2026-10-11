@@ -75,7 +75,7 @@ button{font-family:var(--body)}
 .round{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:16px}
 
 /* Navigation */
-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px}
+nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-gap:12px}
 nav button{background:var(--tile);border:0;border-radius:999px;height:62px;display:flex;align-items:center;padding:0 10px;font-size:18px;font-weight:700;color:var(--fg);cursor:pointer}
 nav button .round{width:44px;height:44px;margin-right:12px}
 button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
@@ -159,6 +159,29 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .chips button:before{content:'+ ';color:#8ED39A;font-weight:700}
 .badge{background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+/* Wetter-Detailseite */
+#wx{cursor:pointer}
+#wx .more{color:var(--muted);font-weight:700;margin-left:4px}
+.wxchart{overflow-x:auto;margin-top:6px}
+.wxchart svg{display:block;width:100%;height:auto}
+.wxnow{display:flex;align-items:center;justify-content:space-between}
+.wxnow .big{font-family:var(--display);font-size:64px;font-weight:300;line-height:1}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:8px;margin-top:12px}
+.fact{background:var(--sky2);border-radius:12px;padding:8px 12px}
+.fact .k{font-size:13px;font-weight:700;color:var(--muted)}
+.fact .v{font-family:var(--display);font-size:20px}
+.hints{margin:12px 0 0;padding:0;list-style:none}
+.hints li{font-size:16px;font-weight:600;color:var(--soft);padding:6px 0 6px 18px;position:relative;line-height:1.35}
+.hints li:before{content:'';position:absolute;left:2px;top:13px;width:7px;height:7px;border-radius:9px;background:var(--sun)}
+.week7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-gap:10px;margin-top:10px}
+.d7{background:var(--sky2);border-radius:16px;padding:10px 6px;text-align:center}
+.d7 .n{font-size:15px;font-weight:700;color:var(--muted)}
+.d7 svg{width:40px;height:40px;display:block;margin:4px auto}
+.d7 .t{font-family:var(--display);font-size:20px}
+.d7 .t small{font-size:16px;color:var(--soft)}
+.d7 .r{font-size:13px;font-weight:700;color:var(--blue);margin-top:4px}
+.d7 .w{font-size:12px;font-weight:600;color:var(--soft)}
+
 /* Kalender: Reiter und Geburtstage */
 .subhead .seg{margin:0;width:360px}
 .wev.bday{border-left-color:#F4A7B9}
@@ -241,6 +264,12 @@ html.compact .chart{height:150px}
 html.compact .board{grid-template-columns:minmax(0,1fr);grid-gap:12px;overflow:visible}
 @media (min-width:600px){ html.compact .board{grid-template-columns:repeat(2,minmax(0,1fr))} }
 html.compact .sheet{padding:16px}
+html.compact .wxchart svg{width:960px;max-width:none}
+html.compact .week7{grid-template-columns:minmax(0,1fr)}
+html.compact .d7{display:grid;grid-template-columns:96px 36px auto minmax(0,1fr);align-items:center;text-align:left;grid-gap:10px;padding:8px 12px}
+html.compact .d7 svg{margin:0;width:36px;height:36px}
+html.compact .d7 .r{margin:0;text-align:right}
+html.compact .d7 .w{display:none}
 html.compact .subhead .seg{order:2;width:100%}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -292,10 +321,10 @@ html.compact .subhead .seg{order:2;width:100%}
     </div>
 
     <div class="col" style="grid-template-rows:1fr auto">
-      <div id="wx" class="card">
+      <div id="wx" class="card" data-go="wetter" role="button" tabindex="0" aria-label="Ausführliches Wetter öffnen">
         <div class="wxtop">
           <div>
-            <div class="label">Lehrte</div>
+            <div class="label">Lehrte<span class="more">›</span></div>
             <div id="wxTemp" class="num">--°</div>
             <div id="wxText">Wetter wird geladen …</div>
           </div>
@@ -336,7 +365,6 @@ html.compact .subhead .seg{order:2;width:100%}
 
   <nav aria-label="Bereiche">
     <button type="button" data-go="verbrauch"><span class="round" style="background:var(--orange)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7"></path></svg></span>Verbrauch</button>
-    <button type="button" data-go="soon" data-name="Wetter"><span class="round" style="background:var(--blue)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19 11a3.5 3.5 0 0 1 0 7z"></path></svg></span>Wetter</button>
     <button type="button" data-go="einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf<span id="shopBadge" class="badge" hidden></span></button>
     <button type="button" data-go="soon" data-name="Essensplan"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
     <button type="button" data-go="kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
@@ -388,6 +416,32 @@ html.compact .subhead .seg{order:2;width:100%}
         <div id="formMsg" role="status"></div>
         <button class="primary" type="submit">Speichern</button>
       </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Wetter ===== -->
+<section id="wetter" class="view sub" aria-label="Wetter" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Wetter in Lehrte</div>
+    <div class="chip" id="wxUpdated">&nbsp;</div>
+  </div>
+  <div style="display:grid;grid-template-rows:minmax(0,1fr) auto;grid-row-gap:18px;min-height:0">
+    <div class="row">
+      <div class="card span2" style="background:var(--sky)">
+        <div class="label">Nächste 24 Stunden · Temperatur und Regenwahrscheinlichkeit</div>
+        <div id="wxHours" class="wxchart"></div>
+      </div>
+      <div class="card" style="background:var(--sky);overflow-y:auto">
+        <div class="wxnow"><div><div class="label">Jetzt</div><div id="wxNowT" class="big num">--°</div><div id="wxNowTxt" style="color:var(--soft)"></div></div><div id="wxNowIcon" style="width:76px;height:76px"></div></div>
+        <div id="wxFacts" class="facts"></div>
+        <ul id="wxHints" class="hints"></ul>
+      </div>
+    </div>
+    <div class="card" style="background:var(--sky)">
+      <div class="label">7 Tage</div>
+      <div id="wxWeek" class="week7"></div>
     </div>
   </div>
 </section>
@@ -596,7 +650,7 @@ html.compact .subhead .seg{order:2;width:100%}
   window.addEventListener('resize', fit); fit();
 
   /* ---------- Ansichten (mit Browser-Verlauf, damit Zurück-Wischen funktioniert) ---------- */
-  var VIEWS = ['home','verbrauch','kalender','muell','einkauf','pinnwand','einstellungen','soon'];
+  var VIEWS = ['home','wetter','verbrauch','kalender','muell','einkauf','pinnwand','einstellungen','soon'];
   function show(id, name, fromHistory){
     if (!fromHistory){
       if (id === 'home' && history.state && history.state.v){ history.back(); return; }
@@ -611,6 +665,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
     if (id === 'verbrauch'){ renderMeter(); fetchMeter(); }
     if (id === 'kalender'){ renderCalendar(); fetchBirthdays(); }
+    if (id === 'wetter') renderWeather();
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
     if (id === 'einstellungen'){ openSettings(); fillTariff(); }
@@ -625,6 +680,7 @@ html.compact .subhead .seg{order:2;width:100%}
     var t = e.target.closest ? e.target.closest('[data-go]') : null;
     if (t) show(t.getAttribute('data-go'), t.getAttribute('data-name'));
   });
+  $('wx').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show('wetter'); } });
 
   /* ---------- Uhr, Datum, Himmel ---------- */
   var DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -705,12 +761,15 @@ html.compact .subhead .seg{order:2;width:100%}
   }
   function hm(iso){ var t = iso.split('T')[1] || ''; return t.slice(0,5); }
   function hours(iso){ var p = hm(iso).split(':'); return (+p[0]) + (+p[1]) / 60; }
+  var wxData = null;
   function loadWeather(){
     var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON +
-      '&current=temperature_2m,weather_code,is_day' +
-      '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset' +
-      '&timezone=Europe%2FBerlin&forecast_days=5';
+      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m' +
+      '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max' +
+      '&timezone=Europe%2FBerlin&forecast_days=8';
     fetch(url).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); }).then(function(d){
+      wxData = d; wxData.loaded = new Date();
       var cur = d.current, w = wmo(cur.weather_code, cur.is_day === 1);
       $('wxTemp').textContent = Math.round(cur.temperature_2m) + '°';
       $('wxText').textContent = w[1] + ' · ' + Math.round(d.daily.temperature_2m_min[0]) + '° / ' + Math.round(d.daily.temperature_2m_max[0]) + '°';
@@ -727,9 +786,92 @@ html.compact .subhead .seg{order:2;width:100%}
           '<div class="t num">' + Math.round(d.daily.temperature_2m_max[i]) + '°</div></div>';
       }
       $('days').innerHTML = html;
+      if (!$('wetter').hidden) renderWeather();
     }).catch(function(){
       $('wxText').textContent = 'Wetter gerade nicht erreichbar';
+      if (!$('wetter').hidden) $('wxUpdated').textContent = 'Nicht erreichbar';
     });
+  }
+  function iconInner(name){ return ICON[name].replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); }
+  function windDir(deg){ return ['N','NO','O','SO','S','SW','W','NW'][Math.round(((deg % 360) + 360) % 360 / 45) % 8]; }
+  function dayName(k, i){ var d = new Date(k + 'T12:00:00'); return i === 0 ? 'Heute' : i === 1 ? 'Morgen' : DAYS[d.getDay()]; }
+  // Index der aktuellen Stunde in den Stundenwerten (Ortszeit Berlin, Format JJJJ-MM-TTTHH:MM)
+  function hourIndex(d){
+    var now = new Date(), key = dayKey(now) + 'T' + pad(now.getHours()) + ':00';
+    var i = d.hourly.time.indexOf(key);
+    return i < 0 ? 0 : i;
+  }
+  function renderHours(d){
+    var h = d.hourly, start = hourIndex(d), n = 24, col = 40, W = n * col, H = 210;
+    var temps = h.temperature_2m.slice(start, start + n), lo = Math.min.apply(null, temps), hi = Math.max.apply(null, temps);
+    if (hi - lo < 4){ hi += 2; lo -= 2; }
+    var y = function(t){ return 112 - (t - lo) / (hi - lo) * 62; };
+    var pts = temps.map(function(t, i){ return (i * col + col / 2) + ',' + y(t).toFixed(1); });
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Temperaturverlauf und Regenwahrscheinlichkeit der nächsten 24 Stunden">' +
+      '<polygon points="' + (col / 2) + ',118 ' + pts.join(' ') + ' ' + (W - col / 2) + ',118" fill="rgba(255,210,122,.14)"/>' +
+      '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#FFD27A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';
+    for (var i = 0; i < temps.length; i++){
+      var x = i * col + col / 2, k = start + i, prob = h.precipitation_probability[k] || 0, mm = h.precipitation[k] || 0;
+      var bh = Math.round(prob / 100 * 44);
+      if (bh) svg += '<rect x="' + (x - 12) + '" y="' + (176 - bh) + '" width="24" height="' + bh + '" rx="5" fill="#8DB8F2" opacity="' + (mm >= 0.3 ? 0.95 : 0.5) + '"/>';
+      if (i % 2 === 0){
+        var wi = wmo(h.weather_code[k], h.is_day[k] === 1);
+        svg += '<g transform="translate(' + (x - 13) + ',2) scale(0.4)">' + iconInner(wi[0]) + '</g>' +
+          '<text x="' + x + '" y="' + (y(temps[i]) - 9).toFixed(1) + '" text-anchor="middle" font-size="15" font-weight="700" fill="#F4F1EA">' + Math.round(temps[i]) + '°</text>' +
+          (prob >= 20 ? '<text x="' + x + '" y="' + (171 - bh) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#B6CFF2">' + prob + '%</text>' : '') +
+          '<text x="' + x + '" y="200" text-anchor="middle" font-size="14" font-weight="700" fill="#9FB4DB">' + (i === 0 ? 'Jetzt' : h.time[k].slice(11, 13) + ' Uhr') + '</text>';
+      }
+    }
+    $('wxHours').innerHTML = svg + '</svg>';
+  }
+  function weatherHints(d){
+    var h = d.hourly, dl = d.daily, start = hourIndex(d), out = [];
+    var rainAt = -1;
+    for (var i = 0; i < 24; i++){ var k = start + i; if ((h.precipitation_probability[k] || 0) >= 50 || (h.precipitation[k] || 0) >= 0.3){ rainAt = k; break; } }
+    if (rainAt === start) out.push('Gerade regnet es oder Regen ist sehr wahrscheinlich.');
+    else if (rainAt > 0) out.push('Regen wahrscheinlich ab etwa ' + h.time[rainAt].slice(11, 13) + ' Uhr' + (h.time[rainAt].slice(0, 10) !== dayKey(new Date()) ? ' (morgen)' : '') + '.');
+    else out.push('Die nächsten 24 Stunden bleibt es voraussichtlich trocken.');
+    for (var j = 0; j < 4; j++){
+      if (dl.temperature_2m_min[j + 1] <= 0){ out.push('Nachtfrost möglich ' + (j === 0 ? 'heute Nacht' : 'in der Nacht zum ' + DAYS[new Date(dl.time[j + 1] + 'T12:00:00').getDay()]) + ' (bis ' + Math.round(dl.temperature_2m_min[j + 1]) + '°).'); break; }
+    }
+    for (var m = 0; m < 4; m++){
+      var g = dl.wind_gusts_10m_max[m];
+      if (g >= 60){ out.push('Sturmböen bis ' + Math.round(g) + ' km/h ' + (m === 0 ? 'heute' : m === 1 ? 'morgen' : 'am ' + DAYS[new Date(dl.time[m] + 'T12:00:00').getDay()]) + '.'); break; }
+      if (g >= 45){ out.push('Kräftiger Wind mit Böen bis ' + Math.round(g) + ' km/h ' + (m === 0 ? 'heute' : m === 1 ? 'morgen' : 'am ' + DAYS[new Date(dl.time[m] + 'T12:00:00').getDay()]) + '.'); break; }
+    }
+    if (dl.uv_index_max[0] >= 6) out.push('Hoher UV-Index heute (' + Math.round(dl.uv_index_max[0]) + ') – an Sonnenschutz denken.');
+    if (dl.temperature_2m_max[0] >= 30) out.push('Heiß heute – bis ' + Math.round(dl.temperature_2m_max[0]) + '°.');
+    for (var s2 = 0; s2 < 3; s2++){ var c = dl.weather_code[s2]; if ((c >= 71 && c <= 77) || c === 85 || c === 86){ out.push('Schnee möglich ' + (s2 === 0 ? 'heute' : s2 === 1 ? 'morgen' : 'übermorgen') + '.'); break; } }
+    return out;
+  }
+  function renderWeather(){
+    var d = wxData;
+    if (!d){ $('wxUpdated').textContent = 'Wird geladen …'; return; }
+    var c = d.current, w = wmo(c.weather_code, c.is_day === 1), dl = d.daily;
+    $('wxUpdated').textContent = 'Stand ' + pad(d.loaded.getHours()) + ':' + pad(d.loaded.getMinutes());
+    $('wxNowT').textContent = Math.round(c.temperature_2m) + '°';
+    $('wxNowTxt').textContent = w[1] + ' · gefühlt ' + Math.round(c.apparent_temperature) + '°';
+    $('wxNowIcon').innerHTML = ICON[w[0]];
+    var facts = [
+      ['Wind aus ' + windDir(c.wind_direction_10m), Math.round(c.wind_speed_10m) + ' km/h'],
+      ['Böen', Math.round(c.wind_gusts_10m) + ' km/h'],
+      ['Luftfeuchte', Math.round(c.relative_humidity_2m) + ' %'],
+      ['UV-Index heute', String(Math.round(dl.uv_index_max[0]))],
+      ['Sonnenaufgang', hm(dl.sunrise[0])],
+      ['Sonnenuntergang', hm(dl.sunset[0])]
+    ];
+    $('wxFacts').innerHTML = facts.map(function(f){ return '<div class="fact"><div class="k">' + f[0] + '</div><div class="v num">' + esc(f[1]) + '</div></div>'; }).join('');
+    $('wxHints').innerHTML = weatherHints(d).map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('');
+    renderHours(d);
+    var html = '';
+    for (var i = 0; i < 7; i++){
+      var di = wmo(dl.weather_code[i], true), rain = dl.precipitation_sum[i] || 0, prob = dl.precipitation_probability_max[i];
+      html += '<div class="d7"><div class="n">' + dayName(dl.time[i], i) + '</div>' + ICON[di[0]] +
+        '<div class="t num">' + Math.round(dl.temperature_2m_max[i]) + '° <small>' + Math.round(dl.temperature_2m_min[i]) + '°</small></div>' +
+        '<div class="r">' + (rain >= 0.1 ? fmt(rain, 1) + ' mm · ' + (prob || 0) + '%' : 'trocken') + '</div>' +
+        '<div class="w">Wind bis ' + Math.round(dl.wind_gusts_10m_max[i]) + ' km/h</div></div>';
+    }
+    $('wxWeek').innerHTML = html;
   }
   loadWeather(); setInterval(loadWeather, WX_MS);
 
