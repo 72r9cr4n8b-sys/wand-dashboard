@@ -192,10 +192,12 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .tog{display:flex;align-items:center;width:100%;background:var(--tile2);border:0;border-radius:14px;padding:11px 14px;margin-top:8px;color:var(--fg);font-size:17px;font-weight:700;cursor:pointer;font-family:var(--body);text-align:left}
 .tog .bx{width:24px;height:24px;border-radius:7px;border:3px solid #F2A3B5;margin-right:12px;flex-shrink:0}
 .tog[aria-pressed="true"] .bx{background:#F2A3B5}
-#mealFilters{padding-bottom:16px}
-#mealFilters .tog{display:inline-flex;width:auto;margin:8px 6px 0 0;padding:8px 12px;font-size:15px;border-radius:999px}
+#mealFilters{display:flex;flex-wrap:wrap;margin-top:4px}
+#mealFilters .tog{display:inline-flex;width:auto;margin:6px 6px 0 0;padding:7px 12px;font-size:15px;border-radius:999px;background:rgba(255,255,255,.08)}
 #mealFilters .tog .bx{width:18px;height:18px;border-width:2px;border-radius:5px;margin-right:8px}
 #mealForm label{margin-top:8px}
+.formhead{display:flex;justify-content:space-between;align-items:center}
+.linkbtn{background:transparent;border:0;color:var(--soft);font-size:16px;font-weight:700;cursor:pointer;font-family:var(--body);padding:6px 4px}
 .mealcard{display:flex;flex-direction:column}
 .mealsearch{width:100%;height:46px;border-radius:14px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:17px;padding:0 14px;font-family:var(--body);margin-top:10px}
 .meallist{overflow-y:auto;min-height:0;margin-top:4px}
@@ -463,6 +465,11 @@ html.compact .subhead .seg{order:2;width:100%}
           <button class="btn alt" type="button" id="ideaShop">Zutaten auf die Einkaufsliste</button>
           <button class="btn alt" type="button" id="ideaCooked">Machen wir heute</button>
         </div>
+        <div id="mealFilters" role="group" aria-label="Vorschläge eingrenzen">
+          <button type="button" class="tog" data-filter="quick" aria-pressed="false"><span class="bx"></span>Nur schnelle (bis 30 Min.)</button>
+          <button type="button" class="tog" data-filter="veggie" aria-pressed="false"><span class="bx"></span>Nur vegetarisch</button>
+          <button type="button" class="tog" data-filter="weather" aria-pressed="true"><span class="bx"></span>Zum Wetter passend</button>
+        </div>
         <div id="ideaMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:6px"></div>
       </div>
       <div class="card mealcard">
@@ -471,15 +478,9 @@ html.compact .subhead .seg{order:2;width:100%}
         <div id="mealList" class="meallist"></div>
       </div>
     </div>
-    <div class="col" style="grid-template-rows:auto minmax(0,1fr)">
-      <div class="card" id="mealFilters">
-        <div class="label" style="color:#F2A3B5">Vorschläge</div>
-        <button type="button" class="tog" data-filter="quick" aria-pressed="false"><span class="bx"></span>Nur schnelle (bis 30 Min.)</button>
-        <button type="button" class="tog" data-filter="veggie" aria-pressed="false"><span class="bx"></span>Nur vegetarisch</button>
-        <button type="button" class="tog" data-filter="weather" aria-pressed="true"><span class="bx"></span>Zum Wetter passend</button>
-      </div>
+    <div class="col" style="grid-template-rows:minmax(0,1fr)">
       <form id="mealForm" class="card tform" novalidate autocomplete="off" style="overflow-y:auto">
-        <div id="mealTitle" style="font-family:var(--display);font-size:24px">Neue Idee</div>
+        <div class="formhead"><div id="mealTitle" style="font-family:var(--display);font-size:24px">Neue Idee</div><button type="button" class="linkbtn" id="mealCancel" hidden>× Abbrechen</button></div>
         <label for="mealName">Gericht<input id="mealName" type="text" maxlength="80" placeholder="z. B. Omas Rouladen"></label>
         <label for="mealIng">Zutaten (mit Komma getrennt)<textarea id="mealIng" maxlength="1500" placeholder="z. B. Rouladen, Speck, Gewürzgurken, Senf, Rotkohl"></textarea></label>
         <div class="pair">
@@ -489,7 +490,6 @@ html.compact .subhead .seg{order:2;width:100%}
         <label for="mealSeason">Passt besonders zu<select id="mealSeason"><option value="">jedem Wetter</option><option value="warm">warmem Wetter</option><option value="kalt">kaltem Wetter</option></select></label>
         <div class="btnrow">
           <button class="btn main" type="submit" style="background:#F2A3B5;color:#3A0D18">Speichern</button>
-          <button class="btn alt" type="button" id="mealCancel" hidden>Abbrechen</button>
           <button class="btn alt" type="button" id="mealDel" hidden>Löschen</button>
         </div>
         <div id="mealMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:10px"></div>
