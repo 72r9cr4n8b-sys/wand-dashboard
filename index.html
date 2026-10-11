@@ -3,11 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Wand-Dashboard</title>
+<title>Zuhause</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Zuhause">
+<meta name="theme-color" content="#0D1322">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: fester 1280×800-Rahmen, der auf jede Tablet-Auflösung skaliert wird */
+/* Layout: auf breiten Bildschirmen ein fester 1280×800-Rahmen, der skaliert wird;
+   auf schmalen (html.compact, z. B. iPhone) fließen die Kacheln untereinander */
 :root{
   --bg:#0D1322; --tile:#1A2238; --tile2:#232C47; --sky:#1D2B4A; --sky2:#26365A;
   --fg:#F4F1EA; --muted:#9FB4DB; --soft:#C9D4EA;
@@ -15,7 +24,7 @@
   --display:'Outfit', 'Helvetica Neue', sans-serif; --body:'Nunito Sans', 'Segoe UI', sans-serif;
   color-scheme: dark;
 }
-html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--body);overflow:hidden;-webkit-text-size-adjust:100%}
 *{box-sizing:border-box}
 button{font-family:var(--body)}
 #stage{position:absolute;left:0;top:0;width:1280px;height:800px;transform-origin:0 0;padding:28px 32px 24px}
@@ -150,6 +159,49 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .chips button:before{content:'+ ';color:#8ED39A;font-weight:700}
 .badge{background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+/* ---------- Schmale Bildschirme ---------- */
+html.compact,html.compact body{height:auto;overflow-x:hidden;overflow-y:auto}
+html.compact #stage{position:static;width:auto;height:auto;transform:none!important;padding:calc(12px + env(safe-area-inset-top)) 16px calc(100px + env(safe-area-inset-bottom))}
+html.compact .view{position:static;grid-row-gap:14px}
+html.compact #home,html.compact .sub{grid-template-rows:none}
+html.compact .row{grid-template-columns:minmax(0,1fr)!important;grid-gap:14px}
+html.compact .span2{grid-column:auto}
+html.compact .col{grid-template-rows:none!important;grid-row-gap:14px}
+html.compact .card{padding:18px;border-radius:24px}
+html.compact #hero{height:250px;border-radius:24px}
+html.compact #hero .content{padding:22px}
+html.compact #greet{font-size:18px}
+html.compact #clock{font-size:84px;letter-spacing:-2px}
+html.compact #date{font-size:21px}
+html.compact .pill{font-size:13px;padding:7px 11px;margin-right:8px;white-space:nowrap}
+html.compact #wx{min-height:230px}
+html.compact .evt{padding:10px 14px}
+html.compact .evt .tm{width:86px;font-size:16px}
+html.compact .evt .tt{font-size:18px}
+html.compact #trash,html.compact #meterTile{min-height:84px;border-radius:24px}
+html.compact nav{position:fixed;left:0;right:0;bottom:0;z-index:10;grid-gap:0;padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:rgba(13,19,34,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--tile2)}
+html.compact nav button{position:relative;flex-direction:column;justify-content:center;height:58px;padding:0;background:transparent;font-size:11px;font-weight:700;border-radius:14px}
+html.compact nav button .round{width:34px;height:34px;margin:0 0 3px}
+html.compact nav button .round svg{width:19px;height:19px}
+html.compact nav button[aria-current="page"]{background:var(--tile)}
+html.compact nav .badge{position:absolute;top:0;left:calc(50% + 8px);margin:0;font-size:11px;padding:1px 6px}
+html.compact .subhead{flex-wrap:wrap;row-gap:10px}
+html.compact .subhead > div:empty{display:none}
+html.compact .subhead .chip{order:3;font-size:13px;padding:7px 14px}
+html.compact .back{height:46px;font-size:16px;padding:0 16px 0 6px}
+html.compact .back .round{width:34px;height:34px}
+html.compact .subtitle{font-size:26px}
+html.compact .week,html.compact .bins,html.compact .setgrid,html.compact .shoplist{grid-template-columns:minmax(0,1fr)}
+html.compact .shoplist > div{grid-column:auto!important}
+html.compact .shopadd button{padding:0 18px;font-size:17px}
+html.compact .bin{border-radius:24px}
+html.compact .bin .nm{font-size:26px}
+html.compact .verdict{font-size:23px}
+html.compact .settings{max-width:none}
+html.compact .btnrow{flex-wrap:wrap}
+html.compact .btnrow .btn{margin-bottom:10px}
+html.compact .card.soon{min-height:260px}
+html.compact .chart{height:150px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -342,7 +394,6 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
       </div>
       <div class="card">
         <button id="shopClear" class="btn alt" type="button" style="width:100%;margin:0">Erledigte entfernen</button>
-        <div style="font-size:15px;color:var(--soft);margin-top:12px;line-height:1.4">Am Handy: <b>…/wand-dashboard/liste.html</b> öffnen und einmal den Zugangsschlüssel eintragen.</div>
       </div>
     </div>
   </div>
@@ -358,7 +409,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   <div class="setgrid">
   <div class="card settings">
     <div style="font-family:var(--display);font-size:28px">Zugangsschlüssel</div>
-    <p>Der Zugangsschlüssel wird nur auf diesem Tablet gespeichert. Ohne ihn zeigt das Dashboard keine Termine an.</p>
+    <p>Der Zugangsschlüssel wird nur auf diesem Gerät gespeichert. Ohne ihn zeigt das Dashboard keine persönlichen Daten an.</p>
     <p id="keyState" style="color:var(--fg);font-weight:700"></p>
     <input id="inKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Zugangsschlüssel eingeben" aria-label="Zugangsschlüssel">
     <div class="btnrow">
@@ -407,9 +458,8 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   'use strict';
   var LAT = 52.3726, LON = 9.9787;   // Lehrte
   var METER_DAY = 1;                  // Ablesetag im Monat
-  var IDLE_MS = 2 * 60 * 1000;        // nach 2 Minuten zurück zum Start
   var WX_MS = 15 * 60 * 1000;         // Wetter alle 15 Minuten
-  var RELOAD_MS = 6 * 60 * 60 * 1000; // Seite alle 6 Stunden neu laden (für Updates)
+  var COMPACT_BELOW = 900;            // ab dieser Breite abwärts: Kacheln untereinander
   var STORE_KEY = 'wanddash.readings.v1';  // alte, nur lokale Ablesungen (werden einmalig übernommen)
   var METER_CACHE = 'wanddash.meter.v2';
   var API = 'https://wand-dashboard.wanddash-5cqf4.workers.dev'; // Vermittler (Cloudflare Worker), enthält keine Geheimnisse
@@ -428,38 +478,50 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   function pad(n){ return (n < 10 ? '0' : '') + n; }
   function fmt(n, d){ return n.toLocaleString('de-DE', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
 
-  /* ---------- Skalierung auf das Tablet ---------- */
+  /* ---------- Darstellung: skalierte Fläche oder Kacheln untereinander ---------- */
   function fit(){
+    // matchMedia statt innerWidth: Mobile Browser melden sonst die Breite der (noch) überstehenden 1280er-Fläche
+    var compact = window.matchMedia('(max-width: ' + (COMPACT_BELOW - 1) + 'px)').matches, st = $('stage'), nav = document.querySelector('nav');
+    document.documentElement.classList.toggle('compact', compact);
+    // Auf schmalen Bildschirmen wird die Navigation zur festen Leiste unten (auch auf Unterseiten sichtbar)
+    var navHome = compact ? document.body : $('home');
+    if (nav.parentNode !== navHome) navHome.appendChild(nav);
+    if (compact){ st.style.transform = st.style.left = st.style.top = ''; return; }
     var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
-    var st = $('stage');
     st.style.transform = 'scale(' + s + ')';
     st.style.left = Math.max(0, (window.innerWidth - 1280 * s) / 2) + 'px';
     st.style.top = Math.max(0, (window.innerHeight - 800 * s) / 2) + 'px';
   }
   window.addEventListener('resize', fit); fit();
 
-  /* ---------- Ansichten ---------- */
-  var idleTimer = null;
-  function show(id, name){
-    ['home','verbrauch','kalender','muell','einkauf','einstellungen','soon'].forEach(function(v){ $(v).hidden = (v !== id); });
+  /* ---------- Ansichten (mit Browser-Verlauf, damit Zurück-Wischen funktioniert) ---------- */
+  var VIEWS = ['home','verbrauch','kalender','muell','einkauf','einstellungen','soon'];
+  function show(id, name, fromHistory){
+    if (!fromHistory){
+      if (id === 'home' && history.state && history.state.v){ history.back(); return; }
+      if (id !== 'home') history.pushState({ v: id, n: name || '' }, '', '#' + id);
+    }
+    VIEWS.forEach(function(v){ $(v).hidden = (v !== id); });
+    [].forEach.call(document.querySelectorAll('nav [data-go]'), function(b){
+      if (b.getAttribute('data-go') === id && (id !== 'soon' || b.getAttribute('data-name') === name)) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
     if (id === 'soon') $('soonTitle').textContent = name || 'Bereich';
     if (id === 'verbrauch'){ renderMeter(); fetchMeter(); }
     if (id === 'kalender') renderCalendar();
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
     if (id === 'einstellungen'){ openSettings(); fillTariff(); }
-    resetIdle();
   }
-  function resetIdle(){
-    clearTimeout(idleTimer);
-    if ($('home').hidden) idleTimer = setTimeout(function(){ show('home'); }, IDLE_MS);
-  }
+  window.addEventListener('popstate', function(e){
+    var st = e.state || {};
+    show(st.v && VIEWS.indexOf(st.v) >= 0 ? st.v : 'home', st.n, true);
+  });
   document.addEventListener('click', function(e){
     var t = e.target.closest ? e.target.closest('[data-go]') : null;
     if (t) show(t.getAttribute('data-go'), t.getAttribute('data-name'));
-    resetIdle();
   });
-  document.addEventListener('input', resetIdle);
 
   /* ---------- Uhr, Datum, Himmel ---------- */
   var DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -771,7 +833,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   });
   renderMeter(); fillTariff(); fetchMeter();
 
-  /* ---------- Kalender (über den Vermittler, Schlüssel nur auf dem Tablet) ---------- */
+  /* ---------- Kalender (über den Vermittler, Schlüssel nur auf dem jeweiligen Gerät) ---------- */
   var calData = null, calError = '', calDay = '';
   function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
   function dayKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -865,7 +927,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
     });
   });
   function openSettingsState(){
-    $('keyState').textContent = getKey() ? 'Auf diesem Tablet ist ein Schlüssel gespeichert.' : 'Noch kein Schlüssel gespeichert.';
+    $('keyState').textContent = getKey() ? 'Auf diesem Gerät ist ein Schlüssel gespeichert.' : 'Noch kein Schlüssel gespeichert.';
     $('delKey').hidden = !getKey();
   }
   var confirmKeyDel = false;
@@ -1050,11 +1112,21 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
   }, 60 * 1000);
   fetchShop();
 
-  /* ---------- Bildschirm wach halten, regelmäßig neu laden ---------- */
-  function wake(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function(){}); } catch (e) {} }
-  wake(); document.addEventListener('visibilitychange', function(){ if (!document.hidden) wake(); });
-  function maybeReload(){ if ($('home').hidden === false) location.reload(); else setTimeout(maybeReload, 60000); }
-  setTimeout(maybeReload, RELOAD_MS);
+  /* ---------- Beim Zurückkehren zur App alles auffrischen (iOS pausiert Hintergrund-Tabs) ---------- */
+  var lastWake = Date.now();
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden || Date.now() - lastWake < 60 * 1000) return;
+    lastWake = Date.now();
+    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop();
+    if (!$('verbrauch').hidden) fetchMeter();
+  });
+
+  /* ---------- Startansicht aus der Adresse, z. B. …/#einkauf ---------- */
+  var startView = location.hash.slice(1);
+  if (startView && startView !== 'home' && VIEWS.indexOf(startView) >= 0 && startView !== 'soon'){
+    history.replaceState(null, '', location.pathname + location.search);
+    show(startView);
+  }
 })();
 </script>
 </body>
