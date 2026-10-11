@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
+<meta name="build" content="2026-10-11T10:37:28">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1859,6 +1860,24 @@ html.compact .subhead .seg{order:2;width:100%}
     tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays();
     if (!$('verbrauch').hidden) fetchMeter();
   });
+
+  /* ---------- Neue Version automatisch laden ---------- */
+  // Jede veröffentlichte Version trägt eine Kennung (meta "build", wird beim Commit gesetzt).
+  // Weicht die Kennung der Seite auf dem Server ab, lädt sich das Dashboard neu – aber nie mitten in einer Eingabe.
+  var BUILD = (document.querySelector('meta[name="build"]') || {}).content || '';
+  function checkUpdate(){
+    if (!BUILD) return;
+    fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(html){
+      var m = /<meta name="build" content="([^"]+)"/.exec(html);
+      if (!m || m[1] === BUILD) return;
+      var a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT');
+      if (typing || !$('noteSheet').hidden) return; // später erneut versuchen
+      location.reload();
+    }).catch(function(){});
+  }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) checkUpdate(); });
+  setInterval(checkUpdate, 30 * 60 * 1000);
+  setTimeout(checkUpdate, 5000);
 
   /* ---------- Startansicht aus der Adresse, z. B. …/#einkauf ---------- */
   var startView = location.hash.slice(1);
