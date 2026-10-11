@@ -6,6 +6,7 @@
  *   ACCESS_KEY  – Zugangsschlüssel, der auf dem Tablet eingetragen wird
  *   AHA_ADRESSE – Adresse für die Müllabfuhr, z. B. "Musterweg 5" oder "Musterweg 5a, Ahlten"
  *   GOVEE_KEY   – API-Schlüssel aus der Govee-Home-App
+ *   TOMTOM_KEY, COMMUTE_FROM, COMMUTE_TO – Verkehrsdienst und Adressen für den Arbeitsweg
  *
  * Alle Abfragen brauchen den Header  Authorization: Bearer <ACCESS_KEY>
  * GET /calendar?days=7 → nur Titel und Zeiten der Termine im Zeitraum, keine
@@ -20,6 +21,7 @@
  * POST /notes  {op:"add",text,color} | {op:"edit",id,text,color} | {op:"pin",id} | {op:"remove",id}
  * GET /birthdays → Geburtstagsliste
  * POST /birthdays  {op:"add",name,day,month,year?} | {op:"edit",id,name,day,month,year?} | {op:"remove",id}
+ * GET /commute → aktuelle Fahrzeit zur Arbeit mit Verkehr (TomTom)
  * GET /meals → Essensideen (beim ersten Abruf mit einer Startsammlung gefüllt)
  * POST /meals  {op:"add"|"edit",id?,name,ingredients,quick,veggie,season} | {op:"remove",id} | {op:"cooked",id}
  */
@@ -60,7 +62,7 @@ export default {
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
     const writable = listName || ['/meter', '/notes', '/birthdays', '/meals'].includes(url.pathname);
-    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals', '/commute'].includes(url.pathname)) return reply(404, { error: 'not found' });
     if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
@@ -73,6 +75,7 @@ export default {
     if (url.pathname === '/notes') return notes(request, env, reply);
     if (url.pathname === '/birthdays') return birthdays(request, env, reply);
     if (url.pathname === '/meals') return meals(request, env, reply);
+    if (url.pathname === '/commute') return commute(env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -716,4 +719,50 @@ async function meals(request, env, reply) {
   data.updated = new Date().toISOString();
   await env.DATA.put('meals', JSON.stringify(data));
   return reply(200, data);
+}
+
+/* ---------- Arbeitsweg (TomTom, nur lesen) ---------- */
+const COMMUTE_CACHE_MS = 4 * 60 * 1000;
+let commuteMemo = null; // { at, key, body }
+let geoMemo = {};       // Adresse → { lat, lon }
+async function geocode(env, address) {
+  if (geoMemo[address]) return geoMemo[address];
+  const r = await fetch('https://api.tomtom.com/search/2/geocode/' + encodeURIComponent(address) + '.json?countrySet=DE&limit=1&language=de-DE&key=' + env.TOMTOM_KEY);
+  if (r.status === 401 || r.status === 403) throw new Error('key');
+  if (!r.ok) throw new Error('net');
+  const hit = ((await r.json()).results || [])[0];
+  if (!hit || !hit.position) throw new Error('address');
+  return (geoMemo[address] = { lat: hit.position.lat, lon: hit.position.lon });
+}
+async function commute(env, reply) {
+  if (!env.TOMTOM_KEY || !env.COMMUTE_FROM || !env.COMMUTE_TO) return reply(500, { error: 'not configured' });
+  const memoKey = env.COMMUTE_FROM + '|' + env.COMMUTE_TO;
+  if (commuteMemo && commuteMemo.key === memoKey && Date.now() - commuteMemo.at < COMMUTE_CACHE_MS) return reply(200, commuteMemo.body);
+  try {
+    const [a, b] = await Promise.all([geocode(env, env.COMMUTE_FROM), geocode(env, env.COMMUTE_TO)]);
+    const r = await fetch('https://api.tomtom.com/routing/1/calculateRoute/' + a.lat + ',' + a.lon + ':' + b.lat + ',' + b.lon +
+      '/json?traffic=true&travelMode=car&routeType=fastest&computeTravelTimeFor=all&departAt=now&key=' + env.TOMTOM_KEY);
+    if (r.status === 401 || r.status === 403) throw new Error('key');
+    if (!r.ok) { console.log('tomtom route HTTP', r.status); throw new Error('net'); }
+    const sum = (((await r.json()).routes || [])[0] || {}).summary;
+    if (!sum) throw new Error('net');
+    const min = sec => Math.round((sec || 0) / 60);
+    const body = {
+      updated: new Date().toISOString(),
+      minutes: min(sum.travelTimeInSeconds),
+      delay: min(sum.trafficDelayInSeconds),                     // Verlust durch Verkehr gegenüber freier Fahrt
+      usual: min(sum.historicTrafficTravelTimeInSeconds || sum.noTrafficTravelTimeInSeconds),
+      km: Math.round((sum.lengthInMeters || 0) / 100) / 10,
+      arrival: sum.arrivalTime ? fmtTime(utcToWall(Date.parse(sum.arrivalTime), TZ)) : null,
+      maps: 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + encodeURIComponent(env.COMMUTE_FROM) + '&destination=' + encodeURIComponent(env.COMMUTE_TO),
+    };
+    commuteMemo = { at: Date.now(), key: memoKey, body };
+    return reply(200, body);
+  } catch (e) {
+    console.log('commute failed:', e.message);
+    if (e.message === 'key') return reply(502, { error: 'tomtom key' });
+    if (e.message === 'address') { geoMemo = {}; return reply(422, { error: 'address' }); }
+    if (commuteMemo && commuteMemo.key === memoKey && Date.now() - commuteMemo.at < 60 * 60 * 1000) return reply(200, { ...commuteMemo.body, stale: true });
+    return reply(502, { error: 'tomtom unreachable' });
+  }
 }

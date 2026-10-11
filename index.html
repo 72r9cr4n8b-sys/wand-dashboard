@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-11T10:37:28">
+<meta name="build" content="2026-10-11T10:51:29">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -45,7 +45,7 @@ button{font-family:var(--body)}
 #greet{font-size:22px;font-weight:600;color:#E6E1F2}
 #clock{font-family:var(--display);font-size:150px;font-weight:300;line-height:.95;letter-spacing:-3px;color:#fff}
 #date{font-family:var(--display);font-size:28px;color:#fff}
-.pills{display:flex}
+.pills{display:flex;flex-wrap:wrap;row-gap:8px}
 .pill{background:var(--bg);border-radius:999px;padding:10px 18px;font-size:17px;font-weight:600;margin-right:12px;color:#fff}
 
 /* Wetter */
@@ -72,7 +72,7 @@ button{font-family:var(--body)}
 .bin .ln{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:600;padding:8px 0;border-top:1px solid rgba(255,255,255,.18)}
 .bin .ln.dark{border-top-color:rgba(0,0,0,.18)}
 .bin .ln small{font-size:16px;font-weight:700;opacity:.8}
-#meterTile{background:#3A2A1E;display:flex;align-items:center;padding:16px 22px;border:0;color:var(--fg);text-align:left;cursor:pointer;width:100%;border-radius:28px}
+#commuteTile{background:#1F3326;display:flex;align-items:center;padding:16px 22px;border:0;color:var(--fg);text-align:left;cursor:pointer;width:100%;border-radius:28px}
 .round{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:16px}
 
 /* Navigation */
@@ -183,6 +183,15 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .d7 .r{font-size:13px;font-weight:700;color:var(--blue);margin-top:4px}
 .d7 .w{font-size:12px;font-weight:600;color:var(--soft)}
 
+/* Arbeitsweg */
+#commuteTile .round{transition:background .3s}
+#commuteTile.lvl-ok{background:#1F3326}#commuteTile.lvl-ok .round{background:#8ED39A}
+#commuteTile.lvl-mid{background:#40301A}#commuteTile.lvl-mid .round{background:var(--yellow)}
+#commuteTile.lvl-bad{background:#4A2020}#commuteTile.lvl-bad .round{background:#FF9A7A}
+#commuteTile.lvl-none{background:var(--tile2)}#commuteTile.lvl-none .round{background:var(--muted)}
+#commuteBig small{font-family:var(--body);font-size:16px;font-weight:700;color:var(--soft);margin-left:8px}
+.pill.alert{background:var(--orange);color:#2A1608;cursor:pointer}
+
 /* Essensideen */
 .ideaname{font-family:var(--display);font-size:38px;line-height:1.1;margin-top:8px}
 .ideameta{font-size:16px;font-weight:600;color:var(--soft);margin-top:6px}
@@ -260,7 +269,15 @@ html.compact #wx{min-height:230px}
 html.compact .evt{padding:10px 14px}
 html.compact .evt .tm{width:86px;font-size:16px}
 html.compact .evt .tt{font-size:18px}
-html.compact #trash,html.compact #meterTile{min-height:84px;border-radius:24px}
+/* Startseite auf dem Handy: Kacheln in sinnvoller Reihenfolge (Arbeitsweg direkt unter der Uhr) */
+html.compact #home .row,html.compact #home .col{display:contents}
+html.compact #hero{order:1}
+html.compact #commuteTile{order:2}
+html.compact #wx{order:3}
+html.compact #calCard{order:4}
+html.compact #trash{order:5}
+html.compact #indoor{order:6}
+html.compact #trash,html.compact #commuteTile{min-height:84px;border-radius:24px}
 html.compact nav{position:fixed;left:0;right:0;bottom:0;z-index:10;grid-gap:0;padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:rgba(13,19,34,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--tile2)}
 html.compact nav button{position:relative;flex-direction:column;justify-content:center;height:58px;padding:0;background:transparent;font-size:11px;font-weight:700;border-radius:14px}
 html.compact nav button .round{width:34px;height:34px;margin:0 0 3px}
@@ -343,6 +360,7 @@ html.compact .subhead .seg{order:2;width:100%}
         <div class="pills">
           <div class="pill">Sonnenaufgang <span id="sunrise" class="num">--:--</span></div>
           <div class="pill">Untergang <span id="sunset" class="num">--:--</span></div>
+          <div class="pill alert" id="meterPill" data-go="verbrauch" role="button" tabindex="0" hidden>Zähler ablesen</div>
         </div>
       </div>
     </div>
@@ -371,7 +389,7 @@ html.compact .subhead .seg{order:2;width:100%}
   </div>
 
   <div class="row">
-    <div class="card span2">
+    <div class="card span2" id="calCard">
       <div class="cardhead">
         <div class="label" style="color:#C3B2F0">Heute &amp; morgen <span id="calMore"></span></div>
         <button class="gear" type="button" data-go="einstellungen" aria-label="Einstellungen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9D4EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
@@ -383,9 +401,9 @@ html.compact .subhead .seg{order:2;width:100%}
         <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:16px;flex-shrink:0"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg>
         <span style="min-width:0"><span id="trashWhen" style="display:block;font-size:15px;font-weight:700">Müllabfuhr</span><span id="trashWhat" style="display:block;font-family:var(--display);font-size:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">wird geladen …</span></span>
       </button>
-      <button id="meterTile" type="button" data-go="verbrauch">
-        <span class="round" style="background:var(--orange)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
-        <span><span id="meterWhen" style="display:block;font-size:15px;font-weight:700;color:#F7BE98">&nbsp;</span><span style="display:block;font-family:var(--display);font-size:24px">Zähler ablesen</span></span>
+      <button id="commuteTile" class="lvl-none" type="button" aria-label="Arbeitsweg in Google Maps öffnen">
+        <span class="round"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14221A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17l1.5-6h9L18 17M7.5 11l1-3.5h7l1 3.5"></path><circle cx="8" cy="17.5" r="1.6"></circle><circle cx="16" cy="17.5" r="1.6"></circle></svg></span>
+        <span style="min-width:0"><span id="commuteSmall" style="display:block;font-size:15px;font-weight:700;color:var(--soft)">Zur Arbeit</span><span id="commuteBig" style="display:block;font-family:var(--display);font-size:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">wird geladen …</span></span>
       </button>
     </div>
   </div>
@@ -703,6 +721,8 @@ html.compact .subhead .seg{order:2;width:100%}
   var NOTES_URL = API + '/notes';
   var BD_URL = API + '/birthdays';
   var MEALS_URL = API + '/meals';
+  var COMMUTE_URL = API + '/commute';
+  var COMMUTE_MS = 5 * 60 * 1000;     // Fahrzeit alle 5 Minuten
   var MEALS_CACHE = 'wanddash.meals.v1';
   var MEALS_FILTER = 'wanddash.meals.filter';
   var BD_CACHE = 'wanddash.birthdays.v1';
@@ -764,6 +784,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (t) show(t.getAttribute('data-go'), t.getAttribute('data-name'));
   });
   $('wx').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show('wetter'); } });
+  $('meterPill').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show('verbrauch'); } });
 
   /* ---------- Uhr, Datum, Himmel ---------- */
   var DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -808,12 +829,16 @@ html.compact .subhead .seg{order:2;width:100%}
     if (calDay !== dayKey(now)) renderCalendar();
     if (trashHour !== dayKey(now) + now.getHours()) renderTrash();
   }
+  // Hinweis „Zähler ablesen“: ab 2 Tage vor dem Ablesetag bis zum 5., solange in dem Zeitraum noch nichts eingetragen ist
   function meterHint(now){
-    var next = new Date(now.getFullYear(), now.getMonth(), METER_DAY);
-    if (now.getDate() > METER_DAY) next = new Date(now.getFullYear(), now.getMonth() + 1, METER_DAY);
-    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var days = Math.round((next - today) / 86400000);
-    $('meterWhen').textContent = days === 0 ? 'Heute fällig' : days === 1 ? 'Morgen' : 'In ' + days + ' Tagen';
+    var due = new Date(now.getFullYear(), now.getMonth() + (now.getDate() > 5 ? 1 : 0), METER_DAY);
+    var from = new Date(due.getFullYear(), due.getMonth(), due.getDate() - 2), to = new Date(due.getFullYear(), due.getMonth(), 5, 23, 59);
+    var show = now >= from && now <= to;
+    if (show && typeof meter !== 'undefined' && meter && meter.readings){
+      var fromKey = dayKey(from);
+      if (meter.readings.some(function(r){ return r.date >= fromKey; })) show = false;
+    }
+    $('meterPill').hidden = !show;
   }
   setInterval(tick, 1000 * 10); tick();
 
@@ -1256,7 +1281,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); fetchMeals(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); fetchMeals(); fetchCommute(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -1465,6 +1490,41 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!$('einkauf').hidden || Date.now() - shopAt > 5 * 60 * 1000) fetchShop();
   }, 60 * 1000);
   fetchShop();
+
+  /* ---------- Arbeitsweg (TomTom über den Vermittler) ---------- */
+  var commuteData = null;
+  function setCommute(level, small, bigHtml){
+    $('commuteTile').className = 'lvl-' + level;
+    $('commuteSmall').textContent = small;
+    $('commuteBig').innerHTML = bigHtml;
+  }
+  function fetchCommute(){
+    var key = getKey();
+    if (!key){ setCommute('none', 'Zur Arbeit', 'Noch nicht verbunden'); return; }
+    fetch(COMMUTE_URL, { headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' }).then(function(r){
+      return r.json().then(function(d){ return { status: r.status, d: d }; });
+    }).then(function(x){
+      var d = x.d;
+      if (x.status !== 200){
+        var msg = x.status === 401 ? 'Schlüssel stimmt nicht' : x.status === 500 ? 'Noch nicht eingerichtet' : x.status === 422 ? 'Adresse nicht gefunden' :
+          d.error === 'tomtom key' ? 'TomTom-Schlüssel ungültig' : 'Verkehrsdaten fehlen';
+        if (commuteData && x.status === 502 && d.error !== 'tomtom key') return; // letzten Stand stehen lassen
+        setCommute('none', 'Zur Arbeit', esc(msg));
+        return;
+      }
+      commuteData = d;
+      // Ampel nach Verzögerung durch Verkehr: bis 3 Min. frei, bis 10 Min. zäh, darüber Stau
+      var level = d.delay <= 3 ? 'ok' : d.delay <= 10 ? 'mid' : 'bad';
+      var small = 'Zur Arbeit' + (d.arrival ? ' · an ca. ' + d.arrival : '') + (d.stale ? ' · Stand ' + hhmm(d.updated) : '');
+      var extra = d.delay <= 1 ? 'freie Fahrt' : d.delay + ' Min. Verzögerung';
+      setCommute(level, small, d.minutes + ' Min.<small>' + esc(extra) + '</small>');
+    }).catch(function(){ if (!commuteData) setCommute('none', 'Zur Arbeit', 'Keine Verbindung'); });
+  }
+  $('commuteTile').addEventListener('click', function(){
+    if (commuteData && commuteData.maps) window.open(commuteData.maps, '_blank', 'noopener');
+    else fetchCommute();
+  });
+  fetchCommute(); setInterval(fetchCommute, COMMUTE_MS);
 
   /* ---------- Essensideen (gemeinsamer Speicher beim Vermittler) ---------- */
   var mealsData = null, mealsError = '', mealsBusy = false, ideaId = null, ideaManual = false, shownIdeas = [], mealEditId = null, confirmMealDel = false;
@@ -1857,7 +1917,7 @@ html.compact .subhead .seg{order:2;width:100%}
   document.addEventListener('visibilitychange', function(){
     if (document.hidden || Date.now() - lastWake < 60 * 1000) return;
     lastWake = Date.now();
-    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays();
+    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays(); fetchCommute();
     if (!$('verbrauch').hidden) fetchMeter();
   });
 
