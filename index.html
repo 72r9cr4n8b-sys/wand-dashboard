@@ -159,6 +159,28 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .chips button:before{content:'+ ';color:#8ED39A;font-weight:700}
 .badge{background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+/* Pinnwand */
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-gap:16px;align-items:start;align-content:start;overflow-y:auto;min-height:0;padding-bottom:4px}
+.note{display:block;width:100%;margin:0;border:0;border-radius:20px;padding:16px 18px 12px;text-align:left;cursor:pointer;font-family:var(--body);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.note .tx{font-size:19px;font-weight:600;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+.note .ft{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;opacity:.7;margin-top:10px}
+.note.new-note{background:var(--tile);color:var(--soft);border:2px dashed var(--tile2);box-shadow:none;text-align:center;padding:26px 18px}
+.note.new-note .tx{font-size:20px}
+.c-gelb{background:#F7D774;color:#2A2208}.c-rosa{background:#F4A7B9;color:#3A0D18}.c-gruen{background:#9ED9A5;color:#0E2A14}.c-blau{background:#9EC5F2;color:#0D1F3A}.c-lila{background:#C9B3F2;color:#24123F}
+#noteSheet{position:fixed;inset:0;z-index:50;background:rgba(5,8,16,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+#noteSheet[hidden]{display:none}
+.sheet{width:100%;max-width:560px;border-radius:26px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.sheet textarea{width:100%;min-height:180px;border:0;border-radius:16px;background:rgba(255,255,255,.55);color:inherit;font-family:var(--body);font-size:19px;font-weight:600;line-height:1.4;padding:14px;resize:vertical}
+.sheet textarea:focus{outline:3px solid rgba(0,0,0,.25)}
+.swatches{display:flex;margin:14px 0 4px}
+.swatches button{width:40px;height:40px;border-radius:999px;border:3px solid rgba(0,0,0,.15);margin-right:10px;cursor:pointer}
+.swatches button[aria-pressed="true"]{border-color:rgba(0,0,0,.7)}
+.sheetbtns{display:flex;flex-wrap:wrap;margin-top:12px}
+.sheetbtns button{height:50px;border:0;border-radius:999px;padding:0 20px;margin:6px 10px 0 0;font-size:17px;font-weight:700;cursor:pointer;font-family:var(--body);background:rgba(255,255,255,.55);color:inherit}
+.sheetbtns .save{background:rgba(0,0,0,.78);color:#fff}
+.sheetbtns .danger{margin-left:auto;margin-right:0}
+#noteMsg{font-size:15px;font-weight:700;min-height:20px;margin-top:8px}
+
 /* ---------- Schmale Bildschirme ---------- */
 html.compact,html.compact body{height:auto;overflow-x:hidden;overflow-y:auto}
 html.compact #stage{position:static;width:auto;height:auto;transform:none!important;padding:calc(12px + env(safe-area-inset-top)) 16px calc(100px + env(safe-area-inset-bottom))}
@@ -202,6 +224,9 @@ html.compact .btnrow{flex-wrap:wrap}
 html.compact .btnrow .btn{margin-bottom:10px}
 html.compact .card.soon{min-height:260px}
 html.compact .chart{height:150px}
+html.compact .board{grid-template-columns:minmax(0,1fr);grid-gap:12px;overflow:visible}
+@media (min-width:600px){ html.compact .board{grid-template-columns:repeat(2,minmax(0,1fr))} }
+html.compact .sheet{padding:16px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -300,7 +325,7 @@ html.compact .chart{height:150px}
     <button type="button" data-go="einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf<span id="shopBadge" class="badge" hidden></span></button>
     <button type="button" data-go="soon" data-name="Essensplan"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
     <button type="button" data-go="kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
-    <button type="button" data-go="soon" data-name="Pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand</button>
+    <button type="button" data-go="pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand<span id="notesBadge" class="badge" hidden></span></button>
   </nav>
 </section>
 
@@ -399,6 +424,16 @@ html.compact .chart{height:150px}
   </div>
 </section>
 
+<!-- ===== Pinnwand ===== -->
+<section id="pinnwand" class="view sub" aria-label="Pinnwand" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Pinnwand</div>
+    <div class="chip" id="notesState">&nbsp;</div>
+  </div>
+  <div id="board" class="board"></div>
+</section>
+
 <!-- ===== Einstellungen ===== -->
 <section id="einstellungen" class="view sub" aria-label="Einstellungen" hidden>
   <div class="subhead">
@@ -453,6 +488,28 @@ html.compact .chart{height:150px}
 </section>
 </div>
 
+<!-- Zettel bearbeiten (außerhalb der skalierten Fläche, damit er immer gut lesbar ist) -->
+<div id="noteSheet" hidden>
+  <form id="noteForm" class="sheet c-gelb" role="dialog" aria-modal="true" aria-labelledby="noteTitle" novalidate>
+    <div id="noteTitle" style="font-family:var(--display);font-size:24px;margin-bottom:12px">Neuer Zettel</div>
+    <textarea id="noteText" maxlength="500" placeholder="Was soll an die Pinnwand?" aria-label="Text des Zettels"></textarea>
+    <div class="swatches" role="group" aria-label="Farbe">
+      <button type="button" class="c-gelb" data-color="gelb" aria-label="Gelb"></button>
+      <button type="button" class="c-rosa" data-color="rosa" aria-label="Rosa"></button>
+      <button type="button" class="c-gruen" data-color="gruen" aria-label="Grün"></button>
+      <button type="button" class="c-blau" data-color="blau" aria-label="Blau"></button>
+      <button type="button" class="c-lila" data-color="lila" aria-label="Lila"></button>
+    </div>
+    <div class="sheetbtns">
+      <button type="submit" class="save">Speichern</button>
+      <button type="button" id="noteCancel">Abbrechen</button>
+      <button type="button" id="notePin" hidden>Anpinnen</button>
+      <button type="button" id="noteDel" class="danger" hidden>Abnehmen</button>
+    </div>
+    <div id="noteMsg" role="status"></div>
+  </form>
+</div>
+
 <script>
 (function(){
   'use strict';
@@ -471,6 +528,8 @@ html.compact .chart{height:150px}
   var CLIMATE_MS = 5 * 60 * 1000;     // Innenklima alle 5 Minuten
   var SHOP_URL = API + '/list/einkauf';
   var METER_URL = API + '/meter';
+  var NOTES_URL = API + '/notes';
+  var NOTES_SEEN = 'wanddash.notes.seen';
   var CAL_KEY = 'wanddash.calkey.v1';
   var CAL_MS = 10 * 60 * 1000;        // Kalender alle 10 Minuten
 
@@ -495,7 +554,7 @@ html.compact .chart{height:150px}
   window.addEventListener('resize', fit); fit();
 
   /* ---------- Ansichten (mit Browser-Verlauf, damit Zurück-Wischen funktioniert) ---------- */
-  var VIEWS = ['home','verbrauch','kalender','muell','einkauf','einstellungen','soon'];
+  var VIEWS = ['home','verbrauch','kalender','muell','einkauf','pinnwand','einstellungen','soon'];
   function show(id, name, fromHistory){
     if (!fromHistory){
       if (id === 'home' && history.state && history.state.v){ history.back(); return; }
@@ -513,10 +572,12 @@ html.compact .chart{height:150px}
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
     if (id === 'einstellungen'){ openSettings(); fillTariff(); }
+    if (id === 'pinnwand'){ markNotesSeen(); fetchNotes(); }
+    closeNote();
   }
   window.addEventListener('popstate', function(e){
-    var st = e.state || {};
-    show(st.v && VIEWS.indexOf(st.v) >= 0 ? st.v : 'home', st.n, true);
+    var st = e.state || {}, v = st.v || location.hash.slice(1); // ohne Zustand (z. B. Link auf #pinnwand) gilt die Adresse
+    show(v && VIEWS.indexOf(v) >= 0 && v !== 'soon' ? v : 'home', st.n, true);
   });
   document.addEventListener('click', function(e){
     var t = e.target.closest ? e.target.closest('[data-go]') : null;
@@ -920,7 +981,7 @@ html.compact .chart{height:150px}
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -1112,12 +1173,116 @@ html.compact .chart{height:150px}
   }, 60 * 1000);
   fetchShop();
 
+  /* ---------- Pinnwand (gemeinsamer Speicher beim Vermittler) ---------- */
+  var notesData = null, notesBusy = false, editId = null, editColor = 'gelb', confirmNoteDel = false;
+  function notesReq(body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(NOTES_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (r.status === 404) throw new Error('gone');
+      if (r.status === 409) throw new Error('full');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    });
+  }
+  function getSeen(){ try { return localStorage.getItem(NOTES_SEEN) || ''; } catch (e) { return ''; } }
+  function markNotesSeen(quiet){ try { localStorage.setItem(NOTES_SEEN, new Date().toISOString()); } catch (e) {} if (!quiet) renderNotesBadge(); }
+  function renderNotesBadge(){
+    var seen = getSeen(), n = 0;
+    if (!seen && notesData) markNotesSeen(true); // erstes Mal auf diesem Gerät: nichts als neu zählen
+    if (notesData && seen) notesData.notes.forEach(function(x){ if (x.created > seen) n++; });
+    if (!$('pinnwand').hidden) n = 0;
+    $('notesBadge').hidden = !n; $('notesBadge').textContent = n ? n + ' neu' : '';
+  }
+  function fetchNotes(){
+    notesReq().then(function(d){ notesData = d; renderNotes(); if (!$('pinnwand').hidden) markNotesSeen(); })
+      .catch(function(e){ notesFail(e); renderNotes(); });
+  }
+  function notesFail(e){
+    var m = e && e.message;
+    $('notesState').textContent = m === 'nokey' ? 'Nicht verbunden' : m === 'auth' ? 'Schlüssel falsch' : 'Nicht erreichbar';
+  }
+  function noteDate(iso){
+    var d = new Date(iso), now = new Date(), days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+    return days === 0 ? 'heute ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) : days === 1 ? 'gestern' : d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()];
+  }
+  var PIN_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-label="angepinnt"><path d="M9 3h6l-1 6 3 3H7l3-3zM11 12h2v9h-2z"></path></svg>';
+  function renderNotes(){
+    renderNotesBadge();
+    var list = notesData ? notesData.notes.slice() : [];
+    list.sort(function(a, b){ return (b.pinned - a.pinned) || (a.created < b.created ? 1 : -1); });
+    if (notesData) $('notesState').textContent = list.length + ' Zettel';
+    $('board').innerHTML = (notesData ? '<button type="button" class="note new-note" data-note="new"><div class="tx">+ Neuer Zettel</div></button>' : '') +
+      list.map(function(x){
+        return '<button type="button" class="note c-' + esc(x.color) + '" data-note="' + esc(x.id) + '"><div class="tx">' + esc(x.text) + '</div>' +
+          '<div class="ft"><span>' + noteDate(x.edited || x.created) + (x.edited ? ' · bearbeitet' : '') + '</span>' + (x.pinned ? PIN_SVG : '') + '</div></button>';
+      }).join('');
+  }
+  function setColor(c){
+    editColor = c;
+    $('noteForm').className = 'sheet c-' + c;
+    [].forEach.call(document.querySelectorAll('.swatches button'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-color') === c)); });
+  }
+  function openNote(id){
+    var n = null;
+    if (id !== 'new' && notesData) notesData.notes.forEach(function(x){ if (x.id === id) n = x; });
+    editId = n ? n.id : null; confirmNoteDel = false;
+    $('noteTitle').textContent = n ? 'Zettel bearbeiten' : 'Neuer Zettel';
+    $('noteText').value = n ? n.text : '';
+    setColor(n ? n.color : 'gelb');
+    $('notePin').hidden = $('noteDel').hidden = !n;
+    $('notePin').textContent = n && n.pinned ? 'Lösen' : 'Anpinnen';
+    $('noteDel').textContent = 'Abnehmen';
+    $('noteMsg').textContent = '';
+    $('noteSheet').hidden = false;
+    setTimeout(function(){ $('noteText').focus(); }, 50);
+  }
+  function closeNote(){ $('noteSheet').hidden = true; editId = null; }
+  function noteDo(body, close){
+    if (notesBusy) return; notesBusy = true;
+    $('noteMsg').textContent = 'Wird gespeichert …';
+    notesReq(body).then(function(d){ notesData = d; renderNotes(); markNotesSeen(); if (close) closeNote(); else $('noteMsg').textContent = ''; })
+      .catch(function(e){
+        var m = e && e.message;
+        $('noteMsg').textContent = m === 'gone' ? 'Der Zettel wurde inzwischen auf einem anderen Gerät abgenommen.' : m === 'full' ? 'Die Pinnwand ist voll (60 Zettel).' :
+          m === 'nokey' ? 'Erst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Zugangsschlüssel stimmt nicht.' : 'Speichern hat nicht geklappt – keine Verbindung.';
+        if (m === 'gone') fetchNotes();
+      })
+      .then(function(){ notesBusy = false; });
+  }
+  $('board').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-note]') : null;
+    if (b) openNote(b.getAttribute('data-note'));
+  });
+  document.querySelector('.swatches').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-color]') : null;
+    if (b) setColor(b.getAttribute('data-color'));
+  });
+  $('noteForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var t = $('noteText').value.trim();
+    if (!t){ $('noteMsg').textContent = 'Bitte etwas schreiben.'; return; }
+    noteDo(editId ? { op: 'edit', id: editId, text: t, color: editColor } : { op: 'add', text: t, color: editColor }, true);
+  });
+  $('noteCancel').addEventListener('click', closeNote);
+  $('notePin').addEventListener('click', function(){ if (editId) noteDo({ op: 'pin', id: editId }, true); });
+  $('noteDel').addEventListener('click', function(){
+    if (!confirmNoteDel){ confirmNoteDel = true; this.textContent = 'Wirklich abnehmen?'; return; }
+    if (editId) noteDo({ op: 'remove', id: editId }, true);
+  });
+  $('noteSheet').addEventListener('click', function(e){ if (e.target === this) closeNote(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('noteSheet').hidden) closeNote(); });
+  fetchNotes(); setInterval(fetchNotes, 5 * 60 * 1000);
+
   /* ---------- Beim Zurückkehren zur App alles auffrischen (iOS pausiert Hintergrund-Tabs) ---------- */
   var lastWake = Date.now();
   document.addEventListener('visibilitychange', function(){
     if (document.hidden || Date.now() - lastWake < 60 * 1000) return;
     lastWake = Date.now();
-    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop();
+    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes();
     if (!$('verbrauch').hidden) fetchMeter();
   });
 

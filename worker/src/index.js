@@ -16,6 +16,8 @@
  * POST /list/einkauf  {op:"add",text} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
  * GET /meter → Zählerstände und Tarif
  * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start,faktor?}
+ * GET /notes → Zettel der Pinnwand
+ * POST /notes  {op:"add",text,color} | {op:"edit",id,text,color} | {op:"pin",id} | {op:"remove",id}
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -53,8 +55,8 @@ export default {
     const url = new URL(request.url);
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
-    const writable = listName || url.pathname === '/meter';
-    if (!listName && !['/calendar', '/trash', '/climate', '/meter'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    const writable = listName || url.pathname === '/meter' || url.pathname === '/notes';
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes'].includes(url.pathname)) return reply(404, { error: 'not found' });
     if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
@@ -64,6 +66,7 @@ export default {
 
     if (listName) return list(request, env, reply, listName);
     if (url.pathname === '/meter') return meter(request, env, reply);
+    if (url.pathname === '/notes') return notes(request, env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -501,5 +504,41 @@ async function meter(request, env, reply) {
   R.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : (a.added < b.added ? -1 : 1));
   data.updated = new Date().toISOString();
   await env.DATA.put('meter', JSON.stringify(data));
+  return reply(200, data);
+}
+
+/* ---------- Pinnwand (KV) ---------- */
+const MAX_NOTES = 60, MAX_NOTE_TEXT = 500;
+const NOTE_COLORS = ['gelb', 'rosa', 'gruen', 'blau', 'lila'];
+async function notes(request, env, reply) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  const data = (await env.DATA.get('notes', 'json')) || { notes: [], updated: null };
+  if (request.method === 'GET') return reply(200, data);
+
+  let body;
+  try { body = await readBody(request, 4000); } catch (e) { return reply(400, { error: 'bad request' }); }
+  const N = data.notes;
+  const i = N.findIndex(x => x.id === body.id);
+  const text = String(body.text || '').replace(/\r\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, MAX_NOTE_TEXT);
+  const color = NOTE_COLORS.includes(body.color) ? body.color : 'gelb';
+  const now = new Date().toISOString();
+  if (body.op === 'add') {
+    if (!text) return reply(400, { error: 'empty' });
+    if (N.length >= MAX_NOTES) return reply(409, { error: 'full' });
+    N.push({ id: crypto.randomUUID().slice(0, 8), text, color, pinned: false, created: now, edited: null });
+  } else if (body.op === 'edit') {
+    if (i < 0) return reply(404, { error: 'gone' });
+    if (!text) return reply(400, { error: 'empty' });
+    N[i].text = text; N[i].color = color; N[i].edited = now;
+  } else if (body.op === 'pin') {
+    if (i < 0) return reply(404, { error: 'gone' });
+    N[i].pinned = !N[i].pinned;
+  } else if (body.op === 'remove') {
+    if (i >= 0) N.splice(i, 1);
+  } else {
+    return reply(400, { error: 'unknown op' });
+  }
+  data.updated = now;
+  await env.DATA.put('notes', JSON.stringify(data));
   return reply(200, data);
 }
