@@ -727,12 +727,13 @@ let commuteMemo = null; // { at, key, body }
 let geoMemo = {};       // Adresse → { lat, lon }
 async function geocode(env, address) {
   if (geoMemo[address]) return geoMemo[address];
-  const r = await fetch('https://api.tomtom.com/search/2/geocode/' + encodeURIComponent(address) + '.json?countrySet=DE&limit=1&language=de-DE&key=' + env.TOMTOM_KEY);
+  // lat/lon bevorzugt Treffer in der Nähe von Lehrte (gleichnamige Straßen in anderen Städten rutschen nach hinten)
+  const r = await fetch('https://api.tomtom.com/search/2/geocode/' + encodeURIComponent(address) + '.json?countrySet=DE&limit=1&language=de-DE&lat=52.3726&lon=9.9787&key=' + env.TOMTOM_KEY);
   if (r.status === 401 || r.status === 403) throw new Error('key');
   if (!r.ok) throw new Error('net');
   const hit = ((await r.json()).results || [])[0];
   if (!hit || !hit.position) throw new Error('address');
-  return (geoMemo[address] = { lat: hit.position.lat, lon: hit.position.lon });
+  return (geoMemo[address] = { lat: hit.position.lat, lon: hit.position.lon, found: (hit.address || {}).freeformAddress || '' });
 }
 async function commute(env, reply) {
   if (!env.TOMTOM_KEY || !env.COMMUTE_FROM || !env.COMMUTE_TO) return reply(500, { error: 'not configured' });
@@ -754,6 +755,7 @@ async function commute(env, reply) {
       usual: min(sum.historicTrafficTravelTimeInSeconds || sum.noTrafficTravelTimeInSeconds),
       km: Math.round((sum.lengthInMeters || 0) / 100) / 10,
       arrival: sum.arrivalTime ? fmtTime(utcToWall(Date.parse(sum.arrivalTime), TZ)) : null,
+      fromFound: a.found, toFound: b.found,   // was TomTom unter den Adressen verstanden hat (zum Prüfen)
       maps: 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + encodeURIComponent(env.COMMUTE_FROM) + '&destination=' + encodeURIComponent(env.COMMUTE_TO),
     };
     commuteMemo = { at: Date.now(), key: memoKey, body };

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-11T10:51:29">
+<meta name="build" content="2026-10-11T11:29:13">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -642,6 +642,8 @@ html.compact .subhead .seg{order:2;width:100%}
       <button id="delKey" class="btn alt" type="button">Schlüssel entfernen</button>
     </div>
     <div id="setMsg" role="status"></div>
+    <div style="font-family:var(--display);font-size:22px;margin-top:22px">Arbeitsweg</div>
+    <p id="commuteFound" style="font-size:16px">Noch keine Daten.</p>
   </div>
   <form id="tariffForm" class="card tform" novalidate>
     <div style="font-family:var(--display);font-size:28px">Tarif</div>
@@ -1515,7 +1517,8 @@ html.compact .subhead .seg{order:2;width:100%}
       commuteData = d;
       // Ampel nach Verzögerung durch Verkehr: bis 3 Min. frei, bis 10 Min. zäh, darüber Stau
       var level = d.delay <= 3 ? 'ok' : d.delay <= 10 ? 'mid' : 'bad';
-      var small = 'Zur Arbeit' + (d.arrival ? ' · an ca. ' + d.arrival : '') + (d.stale ? ' · Stand ' + hhmm(d.updated) : '');
+      var small = 'Zur Arbeit · ' + fmt(d.km, 0) + ' km' + (d.arrival ? ' · an ca. ' + d.arrival : '') + (d.stale ? ' · Stand ' + hhmm(d.updated) : '');
+      $('commuteFound').innerHTML = d.fromFound ? 'Start: <b>' + esc(d.fromFound) + '</b><br>Ziel: <b>' + esc(d.toFound) + '</b><br>' + fmt(d.km, 1) + ' km · ' + d.minutes + ' Min. mit Verkehr' : '';
       var extra = d.delay <= 1 ? 'freie Fahrt' : d.delay + ' Min. Verzögerung';
       setCommute(level, small, d.minutes + ' Min.<small>' + esc(extra) + '</small>');
     }).catch(function(){ if (!commuteData) setCommute('none', 'Zur Arbeit', 'Keine Verbindung'); });
