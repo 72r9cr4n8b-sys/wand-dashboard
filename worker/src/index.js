@@ -382,9 +382,10 @@ async function climate(env, reply) {
   console.log('govee failed:', result.error);
   if (result.error === 'govee key') return reply(502, { error: 'govee key' });
   if (result.error === 'no thermometer') return reply(404, { error: 'no thermometer' });
+  const reason = result.error === 'offline' ? 'offline' : 'unreachable';
   const last = env.DATA && await env.DATA.get('climate:last', 'json');
-  if (last && Date.now() - Date.parse(last.updated) < 12 * 60 * 60 * 1000) return reply(200, { ...last, stale: true });
-  return reply(502, { error: 'govee unreachable' });
+  if (last && Date.now() - Date.parse(last.updated) < 12 * 60 * 60 * 1000) return reply(200, { ...last, stale: true, reason });
+  return reply(502, { error: reason === 'offline' ? 'offline' : 'govee unreachable' });
 }
 // Liest das Thermometer einmal aus; wirft bei Fehlern (Meldung ohne Schlüssel, fürs Protokoll)
 async function goveeRead(env) {
@@ -417,6 +418,7 @@ async function goveeRead(env) {
   if (h && typeof h === 'object') h = h.currentHumidity;
   if (typeof t === 'number' && t > 45) t = (t - 32) * 5 / 9; // Govee liefert °F
   if (typeof t !== 'number' && typeof h !== 'number') {
+    if (online === false) return { error: 'offline' }; // Thermometer hat gerade keine WLAN-Verbindung zur Govee-Cloud
     goveeDevice = null;
     throw new Error('state ohne Messwerte (code ' + (json.code || '?') + ', online ' + online + ')');
   }

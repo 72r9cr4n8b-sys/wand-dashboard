@@ -1107,7 +1107,7 @@ html.compact .sheet{padding:16px}
           lastClimate = d;
           try { localStorage.setItem(CLIMATE_CACHE, JSON.stringify(d)); } catch (e) {}
         }
-        if (d.stale){ showLastClimate('Govee gerade nicht erreichbar'); return; }
+        if (d.stale){ showLastClimate(d.reason === 'offline' ? 'Thermometer ohne WLAN' : 'Govee gerade nicht erreichbar'); return; }
         var h = d.humidity, air = h == null ? '' : h < 40 ? 'Luft trocken' : h > 60 ? 'Luft feucht' : 'Luft angenehm';
         showClimate(d.temperature, h, d.online ? (air ? air + ' · ' : '') + hhmm(d.updated) : 'Thermometer offline · ' + hhmm(d.updated));
         return;
@@ -1116,6 +1116,7 @@ html.compact .sheet{padding:16px}
       if (x.status === 500){ showClimate(null, null, 'Govee-Schlüssel fehlt noch'); return; }
       if (d.error === 'govee key'){ showClimate(null, null, 'Govee-Schlüssel ungültig'); return; }
       if (d.error === 'no thermometer'){ showClimate(null, null, 'Kein Thermometer gefunden'); return; }
+      if (d.error === 'offline'){ showLastClimate('Thermometer ohne WLAN'); return; }
       showLastClimate('Govee gerade nicht erreichbar');
     }).catch(function(){
       showLastClimate('keine Verbindung');
