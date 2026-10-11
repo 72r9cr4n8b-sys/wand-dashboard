@@ -365,41 +365,67 @@ function parseTrash(html) {
 async function climate(env, reply) {
   if (!env.GOVEE_KEY) return reply(500, { error: 'not configured' });
   if (climateMemo && Date.now() - climateMemo.at < CLIMATE_CACHE_MS) return reply(200, climateMemo.body);
-  const headers = { 'Govee-API-Key': env.GOVEE_KEY, 'Content-Type': 'application/json' };
-  try {
-    if (!goveeDevice) {
-      const r = await fetch(GOVEE_API + '/user/devices', { headers });
-      if (r.status === 401 || r.status === 403) return reply(502, { error: 'govee key' });
-      if (!r.ok) throw new Error('status ' + r.status);
-      const list = ((await r.json()).data || []);
-      const d = list.find(x => /^H5179/i.test(x.sku)) ||
-        list.find(x => (x.capabilities || []).some(c => c.instance === 'sensorTemperature'));
-      if (!d) return reply(404, { error: 'no thermometer' });
-      goveeDevice = { sku: d.sku, device: d.device };
-    }
-    const r = await fetch(GOVEE_API + '/device/state', {
-      method: 'POST', headers,
-      body: JSON.stringify({ requestId: crypto.randomUUID(), payload: goveeDevice }),
-    });
-    if (r.status === 401 || r.status === 403) return reply(502, { error: 'govee key' });
-    if (!r.ok) throw new Error('status ' + r.status);
-    const caps = (((await r.json()).payload || {}).capabilities) || [];
-    const val = name => { const c = caps.find(x => x.instance === name); return c && c.state ? c.state.value : null; };
-    let t = val('sensorTemperature'), h = val('sensorHumidity'), online = val('online');
-    if (h && typeof h === 'object') h = h.currentHumidity;
-    if (typeof t === 'number' && t > 45) t = (t - 32) * 5 / 9; // Govee liefert °F
-    if (typeof t !== 'number' && typeof h !== 'number') { goveeDevice = null; return reply(502, { error: 'no data' }); }
-    const body = {
-      updated: new Date().toISOString(),
-      temperature: typeof t === 'number' ? Math.round(t * 10) / 10 : null,
-      humidity: typeof h === 'number' ? Math.round(h) : null,
-      online: online !== false,
-    };
-    climateMemo = { at: Date.now(), body };
-    return reply(200, body);
-  } catch (e) {
-    return reply(502, { error: 'govee unreachable' });
+  let result;
+  try { result = await goveeRead(env); }
+  catch (e) {
+    console.log('govee retry after:', e.message);
+    await new Promise(r => setTimeout(r, 1500));
+    try { result = await goveeRead(env); } catch (e2) { result = { error: e2.message }; }
   }
+  if (result.body) {
+    climateMemo = { at: Date.now(), body: result.body };
+    // Letzten guten Wert für Govee-Aussetzer aufheben, höchstens alle 15 Minuten schreiben (KV-Tageslimit)
+    const last = env.DATA && await env.DATA.get('climate:last', 'json');
+    if (env.DATA && (!last || Date.now() - Date.parse(last.updated) > 15 * 60 * 1000)) await env.DATA.put('climate:last', JSON.stringify(result.body));
+    return reply(200, result.body);
+  }
+  console.log('govee failed:', result.error);
+  if (result.error === 'govee key') return reply(502, { error: 'govee key' });
+  if (result.error === 'no thermometer') return reply(404, { error: 'no thermometer' });
+  const last = env.DATA && await env.DATA.get('climate:last', 'json');
+  if (last && Date.now() - Date.parse(last.updated) < 12 * 60 * 60 * 1000) return reply(200, { ...last, stale: true });
+  return reply(502, { error: 'govee unreachable' });
+}
+// Liest das Thermometer einmal aus; wirft bei Fehlern (Meldung ohne Schlüssel, fürs Protokoll)
+async function goveeRead(env) {
+  const headers = { 'Govee-API-Key': env.GOVEE_KEY, 'Content-Type': 'application/json' };
+  const why = async (r, step) => {
+    let msg = '';
+    try { const j = await r.json(); msg = (j.code || '') + ' ' + (j.msg || j.message || ''); } catch (e) {}
+    return step + ' HTTP ' + r.status + ' ' + msg.trim();
+  };
+  if (!goveeDevice) {
+    const r = await fetch(GOVEE_API + '/user/devices', { headers });
+    if (r.status === 401 || r.status === 403) return { error: 'govee key' };
+    if (!r.ok) throw new Error(await why(r, 'devices'));
+    const list = ((await r.json()).data || []);
+    const d = list.find(x => /^H5179/i.test(x.sku)) ||
+      list.find(x => (x.capabilities || []).some(c => c.instance === 'sensorTemperature'));
+    if (!d) return { error: 'no thermometer' };
+    goveeDevice = { sku: d.sku, device: d.device };
+  }
+  const r = await fetch(GOVEE_API + '/device/state', {
+    method: 'POST', headers,
+    body: JSON.stringify({ requestId: crypto.randomUUID(), payload: goveeDevice }),
+  });
+  if (r.status === 401 || r.status === 403) return { error: 'govee key' };
+  if (!r.ok) throw new Error(await why(r, 'state'));
+  const json = await r.json();
+  const caps = ((json.payload || {}).capabilities) || [];
+  const val = name => { const c = caps.find(x => x.instance === name); return c && c.state ? c.state.value : null; };
+  let t = val('sensorTemperature'), h = val('sensorHumidity'), online = val('online');
+  if (h && typeof h === 'object') h = h.currentHumidity;
+  if (typeof t === 'number' && t > 45) t = (t - 32) * 5 / 9; // Govee liefert °F
+  if (typeof t !== 'number' && typeof h !== 'number') {
+    goveeDevice = null;
+    throw new Error('state ohne Messwerte (code ' + (json.code || '?') + ', online ' + online + ')');
+  }
+  return { body: {
+    updated: new Date().toISOString(),
+    temperature: typeof t === 'number' ? Math.round(t * 10) / 10 : null,
+    humidity: typeof h === 'number' ? Math.round(h) : null,
+    online: online !== false,
+  } };
 }
 
 /* ---------- Gemeinsame Listen (KV) ---------- */

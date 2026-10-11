@@ -1086,6 +1086,15 @@ html.compact .sheet{padding:16px}
     $('humRing').setAttribute('stroke-dasharray', (h == null ? 0 : Math.round(h / 100 * 195)) + ' 195');
     $('inState').textContent = state;
   }
+  var CLIMATE_CACHE = 'wanddash.climate.v1';
+  var lastClimate = null;
+  try { lastClimate = JSON.parse(localStorage.getItem(CLIMATE_CACHE) || 'null'); } catch (e) { lastClimate = null; }
+  function hhmm(iso){ var d = new Date(iso); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  // Bei Aussetzern den letzten guten Wert stehen lassen statt die Kachel zu leeren
+  function showLastClimate(note){
+    if (!lastClimate){ showClimate(null, null, note); return; }
+    showClimate(lastClimate.temperature, lastClimate.humidity, 'Stand ' + hhmm(lastClimate.updated) + ' · ' + note);
+  }
   function fetchClimate(){
     var key = getKey();
     if (!key){ showClimate(null, null, 'Noch nicht verbunden'); return; }
@@ -1094,17 +1103,25 @@ html.compact .sheet{padding:16px}
     }).then(function(x){
       var d = x.d;
       if (x.status === 200){
+        if (!lastClimate || d.updated >= lastClimate.updated){
+          lastClimate = d;
+          try { localStorage.setItem(CLIMATE_CACHE, JSON.stringify(d)); } catch (e) {}
+        }
+        if (d.stale){ showLastClimate('Govee gerade nicht erreichbar'); return; }
         var h = d.humidity, air = h == null ? '' : h < 40 ? 'Luft trocken' : h > 60 ? 'Luft feucht' : 'Luft angenehm';
-        var up = new Date(d.updated);
-        showClimate(d.temperature, h, d.online ? (air ? air + ' · ' : '') + pad(up.getHours()) + ':' + pad(up.getMinutes()) : 'Thermometer offline');
+        showClimate(d.temperature, h, d.online ? (air ? air + ' · ' : '') + hhmm(d.updated) : 'Thermometer offline · ' + hhmm(d.updated));
         return;
       }
-      showClimate(null, null, x.status === 401 ? 'Schlüssel stimmt nicht' : x.status === 500 ? 'Govee-Schlüssel fehlt noch' :
-        d.error === 'govee key' ? 'Govee-Schlüssel ungültig' : d.error === 'no thermometer' ? 'Kein Thermometer gefunden' : 'Govee nicht erreichbar');
+      if (x.status === 401){ showClimate(null, null, 'Schlüssel stimmt nicht'); return; }
+      if (x.status === 500){ showClimate(null, null, 'Govee-Schlüssel fehlt noch'); return; }
+      if (d.error === 'govee key'){ showClimate(null, null, 'Govee-Schlüssel ungültig'); return; }
+      if (d.error === 'no thermometer'){ showClimate(null, null, 'Kein Thermometer gefunden'); return; }
+      showLastClimate('Govee gerade nicht erreichbar');
     }).catch(function(){
-      $('inState').textContent = 'Govee nicht erreichbar';
+      showLastClimate('keine Verbindung');
     });
   }
+  if (lastClimate && getKey()) showLastClimate('wird aktualisiert …');
   fetchClimate(); setInterval(fetchClimate, CLIMATE_MS);
 
   /* ---------- Einkaufsliste (gemeinsamer Speicher beim Vermittler) ---------- */
