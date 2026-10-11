@@ -182,6 +182,28 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .d7 .r{font-size:13px;font-weight:700;color:var(--blue);margin-top:4px}
 .d7 .w{font-size:12px;font-weight:600;color:var(--soft)}
 
+/* Essensideen */
+.ideaname{font-family:var(--display);font-size:38px;line-height:1.1;margin-top:8px}
+.ideameta{font-size:16px;font-weight:600;color:var(--soft);margin-top:6px}
+.ingchips{display:flex;flex-wrap:wrap;margin:10px -3px 0}
+.ingchips span{background:var(--tile2);border-radius:999px;padding:6px 12px;margin:3px;font-size:15px;font-weight:600}
+#ideaCard .btnrow{flex-wrap:wrap}
+#ideaCard .btn{height:50px;font-size:17px;padding:0 20px;margin-bottom:6px}
+.tog{display:flex;align-items:center;width:100%;background:var(--tile2);border:0;border-radius:14px;padding:11px 14px;margin-top:8px;color:var(--fg);font-size:17px;font-weight:700;cursor:pointer;font-family:var(--body);text-align:left}
+.tog .bx{width:24px;height:24px;border-radius:7px;border:3px solid #F2A3B5;margin-right:12px;flex-shrink:0}
+.tog[aria-pressed="true"] .bx{background:#F2A3B5}
+#mealFilters{padding-bottom:16px}
+#mealFilters .tog{display:inline-flex;width:auto;margin:8px 6px 0 0;padding:8px 12px;font-size:15px;border-radius:999px}
+#mealFilters .tog .bx{width:18px;height:18px;border-width:2px;border-radius:5px;margin-right:8px}
+#mealForm label{margin-top:8px}
+.mealcard{display:flex;flex-direction:column}
+.mealsearch{width:100%;height:46px;border-radius:14px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:17px;padding:0 14px;font-family:var(--body);margin-top:10px}
+.meallist{overflow-y:auto;min-height:0;margin-top:4px}
+.mi{display:flex;justify-content:space-between;align-items:center;width:100%;background:var(--tile2);border:0;border-radius:12px;padding:10px 14px;margin-top:6px;color:var(--fg);text-align:left;cursor:pointer;font-family:var(--body)}
+.mi .a{font-size:17px;font-weight:700}
+.mi .b{font-size:13px;font-weight:600;color:var(--soft);text-align:right;margin-left:10px;flex-shrink:0}
+.tform textarea{width:100%;min-height:84px;border-radius:14px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:17px;padding:10px 14px;font-family:var(--body);margin-top:6px;resize:vertical}
+
 /* Kalender: Reiter und Geburtstage */
 .subhead .seg{margin:0;width:360px}
 .wev.bday{border-left-color:#F4A7B9}
@@ -264,6 +286,8 @@ html.compact .chart{height:150px}
 html.compact .board{grid-template-columns:minmax(0,1fr);grid-gap:12px;overflow:visible}
 @media (min-width:600px){ html.compact .board{grid-template-columns:repeat(2,minmax(0,1fr))} }
 html.compact .sheet{padding:16px}
+html.compact .ideaname{font-size:30px}
+html.compact .meallist{max-height:420px}
 html.compact .wxchart svg{width:960px;max-width:none}
 html.compact .week7{grid-template-columns:minmax(0,1fr)}
 html.compact .d7{display:grid;grid-template-columns:96px 36px auto minmax(0,1fr);align-items:center;text-align:left;grid-gap:10px;padding:8px 12px}
@@ -366,7 +390,7 @@ html.compact .subhead .seg{order:2;width:100%}
   <nav aria-label="Bereiche">
     <button type="button" data-go="verbrauch"><span class="round" style="background:var(--orange)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A1608" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7"></path></svg></span>Verbrauch</button>
     <button type="button" data-go="einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf<span id="shopBadge" class="badge" hidden></span></button>
-    <button type="button" data-go="soon" data-name="Essensplan"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
+    <button type="button" data-go="essen"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
     <button type="button" data-go="kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
     <button type="button" data-go="pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand<span id="notesBadge" class="badge" hidden></span></button>
   </nav>
@@ -415,6 +439,60 @@ html.compact .subhead .seg{order:2;width:100%}
         <label for="inGas">Gas (m³)<input id="inGas" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 8412,5"></label>
         <div id="formMsg" role="status"></div>
         <button class="primary" type="submit">Speichern</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Essensideen ===== -->
+<section id="essen" class="view sub" aria-label="Essensideen" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Essensideen</div>
+    <div class="chip" id="mealState">&nbsp;</div>
+  </div>
+  <div class="row">
+    <div class="col span2" style="grid-template-rows:auto minmax(0,1fr)">
+      <div class="card" id="ideaCard" style="background:#3A2230">
+        <div class="label" style="color:#F2A3B5">Idee fürs Abendessen</div>
+        <div id="ideaName" class="ideaname">…</div>
+        <div id="ideaMeta" class="ideameta"></div>
+        <div id="ideaIng" class="ingchips"></div>
+        <div class="btnrow">
+          <button class="btn main" type="button" id="ideaNext" style="background:#F2A3B5;color:#3A0D18">Andere Idee</button>
+          <button class="btn alt" type="button" id="ideaShop">Zutaten auf die Einkaufsliste</button>
+          <button class="btn alt" type="button" id="ideaCooked">Machen wir heute</button>
+        </div>
+        <div id="ideaMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:6px"></div>
+      </div>
+      <div class="card mealcard">
+        <div class="label" style="color:#F2A3B5">Alle Ideen · antippen zum Anzeigen oder Bearbeiten</div>
+        <input id="mealSearch" class="mealsearch" type="search" placeholder="Suchen, z. B. Nudeln oder Hackfleisch" aria-label="Ideen durchsuchen" autocomplete="off">
+        <div id="mealList" class="meallist"></div>
+      </div>
+    </div>
+    <div class="col" style="grid-template-rows:auto minmax(0,1fr)">
+      <div class="card" id="mealFilters">
+        <div class="label" style="color:#F2A3B5">Vorschläge</div>
+        <button type="button" class="tog" data-filter="quick" aria-pressed="false"><span class="bx"></span>Nur schnelle (bis 30 Min.)</button>
+        <button type="button" class="tog" data-filter="veggie" aria-pressed="false"><span class="bx"></span>Nur vegetarisch</button>
+        <button type="button" class="tog" data-filter="weather" aria-pressed="true"><span class="bx"></span>Zum Wetter passend</button>
+      </div>
+      <form id="mealForm" class="card tform" novalidate autocomplete="off" style="overflow-y:auto">
+        <div id="mealTitle" style="font-family:var(--display);font-size:24px">Neue Idee</div>
+        <label for="mealName">Gericht<input id="mealName" type="text" maxlength="80" placeholder="z. B. Omas Rouladen"></label>
+        <label for="mealIng">Zutaten (mit Komma getrennt)<textarea id="mealIng" maxlength="1500" placeholder="z. B. Rouladen, Speck, Gewürzgurken, Senf, Rotkohl"></textarea></label>
+        <div class="pair">
+          <button type="button" class="tog" id="mealQuick" aria-pressed="false"><span class="bx"></span>Schnell</button>
+          <button type="button" class="tog" id="mealVeggie" aria-pressed="false"><span class="bx"></span>Vegetarisch</button>
+        </div>
+        <label for="mealSeason">Passt besonders zu<select id="mealSeason"><option value="">jedem Wetter</option><option value="warm">warmem Wetter</option><option value="kalt">kaltem Wetter</option></select></label>
+        <div class="btnrow">
+          <button class="btn main" type="submit" style="background:#F2A3B5;color:#3A0D18">Speichern</button>
+          <button class="btn alt" type="button" id="mealCancel" hidden>Abbrechen</button>
+          <button class="btn alt" type="button" id="mealDel" hidden>Löschen</button>
+        </div>
+        <div id="mealMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:10px"></div>
       </form>
     </div>
   </div>
@@ -623,6 +701,9 @@ html.compact .subhead .seg{order:2;width:100%}
   var METER_URL = API + '/meter';
   var NOTES_URL = API + '/notes';
   var BD_URL = API + '/birthdays';
+  var MEALS_URL = API + '/meals';
+  var MEALS_CACHE = 'wanddash.meals.v1';
+  var MEALS_FILTER = 'wanddash.meals.filter';
   var BD_CACHE = 'wanddash.birthdays.v1';
   var BD_DAYS = 7;                    // so viele Tage vorher auf Geburtstage hinweisen
   var NOTES_SEEN = 'wanddash.notes.seen';
@@ -650,7 +731,7 @@ html.compact .subhead .seg{order:2;width:100%}
   window.addEventListener('resize', fit); fit();
 
   /* ---------- Ansichten (mit Browser-Verlauf, damit Zurück-Wischen funktioniert) ---------- */
-  var VIEWS = ['home','wetter','verbrauch','kalender','muell','einkauf','pinnwand','einstellungen','soon'];
+  var VIEWS = ['home','wetter','verbrauch','kalender','muell','einkauf','pinnwand','essen','einstellungen','soon'];
   function show(id, name, fromHistory){
     if (!fromHistory){
       if (id === 'home' && history.state && history.state.v){ history.back(); return; }
@@ -666,6 +747,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (id === 'verbrauch'){ renderMeter(); fetchMeter(); }
     if (id === 'kalender'){ renderCalendar(); fetchBirthdays(); }
     if (id === 'wetter') renderWeather();
+    if (id === 'essen'){ if (!ideaId) pickIdea(); renderMeals(); fetchMeals(); }
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
     if (id === 'einstellungen'){ openSettings(); fillTariff(); }
@@ -787,6 +869,7 @@ html.compact .subhead .seg{order:2;width:100%}
       }
       $('days').innerHTML = html;
       if (!$('wetter').hidden) renderWeather();
+      recheckIdea();
     }).catch(function(){
       $('wxText').textContent = 'Wetter gerade nicht erreichbar';
       if (!$('wetter').hidden) $('wxUpdated').textContent = 'Nicht erreichbar';
@@ -1172,7 +1255,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); fetchMeals(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -1381,6 +1464,176 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!$('einkauf').hidden || Date.now() - shopAt > 5 * 60 * 1000) fetchShop();
   }, 60 * 1000);
   fetchShop();
+
+  /* ---------- Essensideen (gemeinsamer Speicher beim Vermittler) ---------- */
+  var mealsData = null, mealsError = '', mealsBusy = false, ideaId = null, ideaManual = false, shownIdeas = [], mealEditId = null, confirmMealDel = false;
+  var mealFilter = { quick: false, veggie: false, weather: true };
+  try { mealsData = JSON.parse(localStorage.getItem(MEALS_CACHE) || 'null'); } catch (e) { mealsData = null; }
+  try { var mf = JSON.parse(localStorage.getItem(MEALS_FILTER) || 'null'); if (mf) mealFilter = mf; } catch (e) {}
+  function mealsReq(body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(MEALS_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (r.status === 400) throw new Error('invalid');
+      if (r.status === 404) throw new Error('gone');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    });
+  }
+  function gotMeals(d){
+    mealsData = d; mealsError = '';
+    try { localStorage.setItem(MEALS_CACHE, JSON.stringify(d)); } catch (e) {}
+    if (!ideaId || !mealById(ideaId)) pickIdea();
+    renderMeals();
+  }
+  function fetchMeals(){ mealsReq().then(gotMeals).catch(function(e){ mealsError = (e && e.message) || 'net'; renderMeals(); }); }
+  function mealById(id){ var m = null; (mealsData ? mealsData.ideas : []).forEach(function(x){ if (x.id === id) m = x; }); return m; }
+  function daysSince(k){ if (!k) return null; var n = new Date(); return Math.round((new Date(n.getFullYear(), n.getMonth(), n.getDate()) - parseDay(k)) / 86400000); }
+  function lastCookedText(m){
+    var n = daysSince(m.lastCooked);
+    return n === null ? 'noch nie gekocht' : n === 0 ? 'heute gekocht' : n === 1 ? 'gestern gekocht' : 'zuletzt vor ' + n + ' Tagen';
+  }
+  // Wetter von heute: über 24° eher Leichtes, bis 12° eher Warmes
+  function weatherMood(){
+    if (!wxData) return null;
+    var t = Math.round(wxData.daily.temperature_2m_max[0]);
+    return t >= 24 ? { s: 'warm', t: t } : t <= 12 ? { s: 'kalt', t: t } : { s: '', t: t };
+  }
+  function ideaFits(m){
+    var mood = mealFilter.weather ? weatherMood() : null;
+    if (!m || (mealFilter.quick && !m.quick) || (mealFilter.veggie && !m.veggie)) return false;
+    return !(mood && mood.s && m.season && m.season !== mood.s);
+  }
+  // Nachdem das Wetter geladen ist: unpassenden (automatisch gewählten) Vorschlag ersetzen
+  function recheckIdea(){
+    if (mealsData && ideaId && !ideaManual && !ideaFits(mealById(ideaId))){ pickIdea(); renderMeals(); }
+  }
+  function pickIdea(){
+    var all = mealsData ? mealsData.ideas : [], mood = mealFilter.weather ? weatherMood() : null;
+    ideaManual = false;
+    var base = all.filter(ideaFits);
+    // Erst streng (nicht gerade gezeigt, nicht in den letzten 7 Tagen gekocht), dann lockerer
+    var tries = [
+      function(m){ return shownIdeas.indexOf(m.id) < 0 && !(daysSince(m.lastCooked) < 7); },
+      function(m){ return m.id !== ideaId && !(daysSince(m.lastCooked) < 7); },
+      function(m){ return m.id !== ideaId; },
+      function(){ return true; }
+    ], pool = [];
+    for (var t = 0; t < tries.length && !pool.length; t++) pool = base.filter(tries[t]);
+    if (!pool.length){ ideaId = null; return; }
+    var weights = pool.map(function(m){
+      var n = daysSince(m.lastCooked); n = n === null ? 60 : Math.min(n, 60);
+      return (1 + n / 15) * (mood && mood.s && m.season === mood.s ? 2 : 1);
+    });
+    var sum = weights.reduce(function(a, b){ return a + b; }, 0), r = Math.random() * sum, k = 0;
+    while (r > weights[k] && k < pool.length - 1){ r -= weights[k]; k++; }
+    ideaId = pool[k].id;
+    shownIdeas.push(ideaId); if (shownIdeas.length > Math.max(3, Math.floor(base.length / 2))) shownIdeas.shift();
+  }
+  function renderMeals(){
+    var all = mealsData ? mealsData.ideas : [], m = mealById(ideaId), mood = mealFilter.weather ? weatherMood() : null;
+    $('mealState').textContent = mealsData ? all.length + ' Ideen' : mealsError === 'nokey' ? 'Nicht verbunden' : mealsError === 'auth' ? 'Schlüssel falsch' : mealsError ? 'Nicht erreichbar' : 'Wird geladen …';
+    [].forEach.call(document.querySelectorAll('#mealFilters [data-filter]'), function(b){ b.setAttribute('aria-pressed', String(!!mealFilter[b.getAttribute('data-filter')])); });
+    if (!m){
+      $('ideaName').textContent = mealsData ? 'Keine Idee passt zu den Filtern' : '…';
+      $('ideaMeta').textContent = mealsData ? 'Nimm einen Filter heraus oder lege unten rechts eine neue Idee an.' : '';
+      $('ideaIng').innerHTML = '';
+    } else {
+      $('ideaName').textContent = m.name;
+      var meta = [];
+      if (m.quick) meta.push('schnell (bis 30 Min.)');
+      if (m.veggie) meta.push('vegetarisch');
+      meta.push(lastCookedText(m));
+      if (mood && mood.s && m.season === mood.s) meta.push(mood.s === 'kalt' ? 'passt zum kühlen Tag (' + mood.t + '°)' : 'passt zum warmen Tag (' + mood.t + '°)');
+      $('ideaMeta').textContent = meta.join(' · ');
+      $('ideaIng').innerHTML = m.ingredients.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join('');
+    }
+    $('ideaShop').hidden = $('ideaCooked').hidden = !m;
+    var q = $('mealSearch').value.trim().toLowerCase();
+    var list = all.filter(function(x){ return !q || x.name.toLowerCase().indexOf(q) >= 0 || x.ingredients.join(' ').toLowerCase().indexOf(q) >= 0; })
+      .sort(function(a, b){ return a.name.localeCompare(b.name, 'de'); });
+    $('mealList').innerHTML = !mealsData ? '' : !list.length ? '<div style="font-size:16px;color:var(--soft);margin-top:10px">Nichts gefunden.</div>' :
+      list.map(function(x){
+        var tags = [x.quick ? 'schnell' : '', x.veggie ? 'veg.' : ''].filter(Boolean).join(' · ');
+        return '<button type="button" class="mi" data-meal="' + esc(x.id) + '"><span class="a">' + esc(x.name) + '</span><span class="b">' + (tags ? tags + '<br>' : '') + esc(lastCookedText(x)) + '</span></button>';
+      }).join('');
+  }
+  function setTog(el, on){ el.setAttribute('aria-pressed', String(!!on)); }
+  function mealForm(m){
+    mealEditId = m ? m.id : null; confirmMealDel = false;
+    $('mealTitle').textContent = m ? 'Idee bearbeiten' : 'Neue Idee';
+    $('mealName').value = m ? m.name : ''; $('mealIng').value = m ? m.ingredients.join(', ') : '';
+    setTog($('mealQuick'), m && m.quick); setTog($('mealVeggie'), m && m.veggie);
+    $('mealSeason').value = m ? m.season : '';
+    $('mealCancel').hidden = $('mealDel').hidden = !m;
+    $('mealDel').textContent = 'Löschen';
+  }
+  function ideaSay(t){ $('ideaMsg').textContent = t; clearTimeout(ideaSay.t); ideaSay.t = setTimeout(function(){ $('ideaMsg').textContent = ''; }, 6000); }
+  function mealFail(e, el){
+    var m = e && e.message;
+    el.textContent = m === 'nokey' ? 'Erst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Zugangsschlüssel stimmt nicht.' : m === 'invalid' ? 'Bitte einen Namen eintragen.' :
+      m === 'gone' ? 'Die Idee wurde inzwischen auf einem anderen Gerät gelöscht.' : 'Hat nicht geklappt – keine Verbindung.';
+    if (m === 'gone') fetchMeals();
+  }
+  $('ideaNext').addEventListener('click', function(){ pickIdea(); renderMeals(); $('ideaMsg').textContent = ''; });
+  $('ideaShop').addEventListener('click', function(){
+    var m = mealById(ideaId);
+    if (!m || mealsBusy) return; mealsBusy = true;
+    ideaSay('Wird eingetragen …');
+    shopReq('POST', { op: 'addMany', texts: m.ingredients }).then(function(d){
+      var n = d.added || 0; shop = d; shopAt = Date.now(); renderShop();
+      ideaSay(n ? n + (n === 1 ? ' Zutat steht' : ' Zutaten stehen') + ' jetzt auf der Einkaufsliste. Was ihr im Haus habt, dort einfach abhaken.' : 'Alle Zutaten stehen schon auf der Einkaufsliste.');
+    }).catch(function(e){ mealFail(e, $('ideaMsg')); }).then(function(){ mealsBusy = false; });
+  });
+  $('ideaCooked').addEventListener('click', function(){
+    if (!ideaId || mealsBusy) return; mealsBusy = true;
+    mealsReq({ op: 'cooked', id: ideaId }).then(function(d){ gotMeals(d); ideaSay('Gemerkt – guten Appetit!'); })
+      .catch(function(e){ mealFail(e, $('ideaMsg')); }).then(function(){ mealsBusy = false; });
+  });
+  $('mealFilters').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-filter]') : null;
+    if (!b) return;
+    var f = b.getAttribute('data-filter'); mealFilter[f] = !mealFilter[f];
+    try { localStorage.setItem(MEALS_FILTER, JSON.stringify(mealFilter)); } catch (e2) {}
+    shownIdeas = []; pickIdea(); renderMeals();
+  });
+  $('mealSearch').addEventListener('input', renderMeals);
+  $('mealList').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-meal]') : null;
+    if (!b) return;
+    var m = mealById(b.getAttribute('data-meal'));
+    if (!m) return;
+    ideaId = m.id; ideaManual = true; renderMeals(); mealForm(m); $('mealMsg').textContent = '';
+    if (document.documentElement.classList.contains('compact')) $('ideaCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('mealQuick').addEventListener('click', function(){ setTog(this, this.getAttribute('aria-pressed') !== 'true'); });
+  $('mealVeggie').addEventListener('click', function(){ setTog(this, this.getAttribute('aria-pressed') !== 'true'); });
+  $('mealForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = $('mealName').value.trim();
+    if (!name){ $('mealMsg').textContent = 'Bitte einen Namen eintragen.'; return; }
+    if (mealsBusy) return; mealsBusy = true;
+    var body = { op: mealEditId ? 'edit' : 'add', name: name, ingredients: $('mealIng').value,
+      quick: $('mealQuick').getAttribute('aria-pressed') === 'true', veggie: $('mealVeggie').getAttribute('aria-pressed') === 'true', season: $('mealSeason').value };
+    if (mealEditId) body.id = mealEditId;
+    $('mealMsg').textContent = 'Wird gespeichert …';
+    mealsReq(body).then(function(d){
+      var wasEdit = !!mealEditId; gotMeals(d); mealForm(null);
+      $('mealMsg').textContent = wasEdit ? 'Geändert.' : 'Gespeichert – die Idee ist jetzt dabei.';
+      setTimeout(function(){ $('mealMsg').textContent = ''; }, 4000);
+    }).catch(function(e2){ mealFail(e2, $('mealMsg')); }).then(function(){ mealsBusy = false; });
+  });
+  $('mealCancel').addEventListener('click', function(){ mealForm(null); $('mealMsg').textContent = ''; });
+  $('mealDel').addEventListener('click', function(){
+    if (!confirmMealDel){ confirmMealDel = true; this.textContent = 'Wirklich löschen?'; return; }
+    if (!mealEditId || mealsBusy) return; mealsBusy = true;
+    mealsReq({ op: 'remove', id: mealEditId }).then(function(d){ if (ideaId === mealEditId) ideaId = null; gotMeals(d); mealForm(null); $('mealMsg').textContent = 'Gelöscht.'; })
+      .catch(function(e){ mealFail(e, $('mealMsg')); }).then(function(){ mealsBusy = false; });
+  });
+  mealForm(null); if (mealsData) pickIdea(); fetchMeals();
 
   /* ---------- Geburtstage (gemeinsamer Speicher beim Vermittler) ---------- */
   var bdData = null, bdError = '', bdBusy = false, bdEditId = null, confirmBdDel = false, calTab = 'termine';

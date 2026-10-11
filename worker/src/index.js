@@ -13,13 +13,15 @@
  * GET /trash → nächste Abholtermine je Tonne (aha Region Hannover, Gemeinde Lehrte).
  * GET /climate → Temperatur und Luftfeuchte des Govee-Thermometers.
  * GET /list/einkauf → Einkaufsliste aus dem gemeinsamen Speicher (KV "DATA")
- * POST /list/einkauf  {op:"add",text} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
+ * POST /list/einkauf  {op:"add",text} | {op:"addMany",texts} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
  * GET /meter → Zählerstände und Tarif
  * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start,faktor?}
  * GET /notes → Zettel der Pinnwand
  * POST /notes  {op:"add",text,color} | {op:"edit",id,text,color} | {op:"pin",id} | {op:"remove",id}
  * GET /birthdays → Geburtstagsliste
  * POST /birthdays  {op:"add",name,day,month,year?} | {op:"edit",id,name,day,month,year?} | {op:"remove",id}
+ * GET /meals → Essensideen (beim ersten Abruf mit einer Startsammlung gefüllt)
+ * POST /meals  {op:"add"|"edit",id?,name,ingredients,quick,veggie,season} | {op:"remove",id} | {op:"cooked",id}
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -57,8 +59,8 @@ export default {
     const url = new URL(request.url);
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
-    const writable = listName || ['/meter', '/notes', '/birthdays'].includes(url.pathname);
-    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    const writable = listName || ['/meter', '/notes', '/birthdays', '/meals'].includes(url.pathname);
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals'].includes(url.pathname)) return reply(404, { error: 'not found' });
     if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
@@ -70,6 +72,7 @@ export default {
     if (url.pathname === '/meter') return meter(request, env, reply);
     if (url.pathname === '/notes') return notes(request, env, reply);
     if (url.pathname === '/birthdays') return birthdays(request, env, reply);
+    if (url.pathname === '/meals') return meals(request, env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -462,6 +465,19 @@ async function list(request, env, reply, name) {
       if (items.length >= MAX_ITEMS) return reply(409, { error: 'full' });
       items.push({ id: crypto.randomUUID().slice(0, 8), text, done: false, added: new Date().toISOString() });
     }
+  } else if (body.op === 'addMany') {
+    if (!Array.isArray(body.texts) || body.texts.length > 40) return reply(400, { error: 'bad request' });
+    let added = 0;
+    for (const raw of body.texts) {
+      const text = String(raw || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT);
+      if (!text) continue;
+      const same = items.find(x => x.text.toLowerCase() === text.toLowerCase());
+      if (same) { if (same.done) { same.done = false; added++; } continue; }
+      if (items.length >= MAX_ITEMS) break;
+      items.push({ id: crypto.randomUUID().slice(0, 8), text, done: false, added: new Date().toISOString() });
+      added++;
+    }
+    data.added = added;
   } else if (body.op === 'toggle') {
     const i = find(body.id);
     if (i < 0) return reply(200, data); // inzwischen woanders gelöscht
@@ -609,5 +625,95 @@ async function birthdays(request, env, reply) {
   }
   data.updated = new Date().toISOString();
   await env.DATA.put('birthdays', JSON.stringify(data));
+  return reply(200, data);
+}
+
+/* ---------- Essensideen (KV) ---------- */
+const MAX_MEALS = 200;
+// Startsammlung: Abendessen für zwei, Zutaten ohne Mengen und ohne Grundzutaten (Salz, Öl, Gewürze)
+// [Name, Zutaten, schnell (bis 30 Min.), vegetarisch, passt zu 'warm' | 'kalt' | '']
+const STARTER_MEALS = [
+  ['Spaghetti Bolognese', 'Hackfleisch, Spaghetti, passierte Tomaten, Zwiebel, Knoblauch, Karotte, Parmesan', false, false, ''],
+  ['Gemüse-Curry mit Reis', 'Kokosmilch, Currypaste, Paprika, Zucchini, Kichererbsen, Reis', true, true, ''],
+  ['Hähnchen-Gemüse-Pfanne mit Reis', 'Hähnchenbrust, Paprika, Brokkoli, Sojasoße, Reis', true, false, ''],
+  ['Kartoffelsuppe mit Würstchen', 'Kartoffeln, Suppengrün, Wiener Würstchen, Gemüsebrühe', false, false, 'kalt'],
+  ['Linsen-Dal mit Fladenbrot', 'Rote Linsen, Kokosmilch, Dosentomaten, Zwiebel, Ingwer, Fladenbrot', true, true, ''],
+  ['Ofengemüse mit Feta', 'Kartoffeln, Paprika, Zucchini, Rote Zwiebel, Feta', false, true, ''],
+  ['Lachs mit Ofenkartoffeln und Spinat', 'Lachsfilet, Kartoffeln, Blattspinat, Zitrone', false, false, ''],
+  ['Chili con Carne', 'Hackfleisch, Kidneybohnen, Mais, Dosentomaten, Paprika, Zwiebel', false, false, 'kalt'],
+  ['Flammkuchen', 'Flammkuchenteig, Schmand, Speckwürfel, Zwiebel', true, false, ''],
+  ['Kartoffelpuffer mit Apfelmus', 'Kartoffeln, Eier, Zwiebel, Apfelmus', false, true, 'kalt'],
+  ['Spaghetti Aglio e Olio', 'Spaghetti, Knoblauch, Chili, Petersilie, Parmesan', true, true, ''],
+  ['Gnocchi mit Tomaten und Mozzarella', 'Gnocchi, Kirschtomaten, Mozzarella, Basilikum', true, true, 'warm'],
+  ['Schnitzel mit Bratkartoffeln', 'Schweineschnitzel, Paniermehl, Eier, Kartoffeln, Zwiebel', false, false, ''],
+  ['Gulasch mit Bandnudeln', 'Rindergulasch, Zwiebeln, Paprika, Tomatenmark, Bandnudeln', false, false, 'kalt'],
+  ['Bauernfrühstück', 'Kartoffeln, Eier, Speckwürfel, Zwiebel, Gewürzgurken', true, false, ''],
+  ['Hähnchen-Wraps', 'Tortilla-Wraps, Hähnchenbrust, Eisbergsalat, Tomaten, Mais, Joghurt', true, false, 'warm'],
+  ['Gefüllte Paprika', 'Paprika, Hackfleisch, Reis, Tomatensoße, Reibekäse', false, false, ''],
+  ['Pilzrisotto', 'Risottoreis, Champignons, Parmesan, Zwiebel, Weißwein, Gemüsebrühe', false, true, 'kalt'],
+  ['Fischstäbchen mit Kartoffelpüree und Erbsen', 'Fischstäbchen, Kartoffeln, Milch, Butter, Erbsen', true, false, ''],
+  ['Griechischer Salat mit Fladenbrot', 'Gurke, Tomaten, Feta, Oliven, Paprika, Rote Zwiebel, Fladenbrot', true, true, 'warm'],
+  ['Burger', 'Burgerbrötchen, Rinderhack, Cheddar, Salat, Tomate, Gurke', true, false, 'warm'],
+  ['Grillabend mit Kartoffelsalat', 'Bratwürstchen, Grillgemüse, Kartoffeln, Gewürzgurken, Mayonnaise', false, false, 'warm'],
+  ['Kürbissuppe', 'Hokkaido-Kürbis, Kartoffel, Zwiebel, Kokosmilch, Ingwer', false, true, 'kalt'],
+  ['Lasagne', 'Lasagneplatten, Hackfleisch, passierte Tomaten, Milch, Butter, Mehl, Reibekäse', false, false, 'kalt'],
+  ['Pizza selbst belegt', 'Pizzateig, Tomatensoße, Mozzarella, Salami, Paprika', true, false, ''],
+  ['Asia-Nudeln mit Gemüse', 'Mie-Nudeln, Paprika, Möhren, Zuckerschoten, Sojasoße, Eier', true, true, ''],
+  ['Käsespätzle mit Salat', 'Spätzle, Bergkäse, Zwiebeln, Butter, Salat', true, true, 'kalt'],
+  ['Ofenkartoffel mit Kräuterquark', 'Große Kartoffeln, Quark, Kräuter, Salat', false, true, 'warm'],
+  ['Frikadellen mit Kartoffelsalat', 'Hackfleisch, Brötchen, Eier, Zwiebel, Kartoffeln, Gewürzgurken', false, false, ''],
+  ['Tortellini in Sahnesoße mit Schinken', 'Tortellini, Sahne, Kochschinken, Erbsen, Parmesan', true, false, ''],
+  ['Couscous-Salat mit Halloumi', 'Couscous, Halloumi, Gurke, Tomaten, Minze, Zitrone', true, true, 'warm'],
+  ['Grüner Bohneneintopf', 'Grüne Bohnen, Kartoffeln, Mettwürstchen, Zwiebel, Gemüsebrühe', false, false, 'kalt'],
+  ['Shakshuka mit Brot', 'Eier, Dosentomaten, Paprika, Zwiebel, Feta, Brot', true, true, ''],
+  ['Hähnchenschenkel mit Ofenkartoffeln', 'Hähnchenschenkel, Kartoffeln, Paprika, Rosmarin', false, false, ''],
+  ['Quiche Lorraine mit Salat', 'Mürbeteig, Speckwürfel, Eier, Sahne, Reibekäse, Lauch, Salat', false, false, ''],
+  ['Zucchini-Nudeln mit Garnelen', 'Zucchini, Garnelen, Knoblauch, Kirschtomaten, Chili', true, false, 'warm'],
+];
+function mealFrom(body) {
+  const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const list = Array.isArray(body.ingredients) ? body.ingredients : String(body.ingredients || '').split(/[,\n;]/);
+  const seen = new Set(), ingredients = [];
+  for (const x of list) {
+    const t = String(x).replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT);
+    if (t && !seen.has(t.toLowerCase()) && ingredients.length < 30) { seen.add(t.toLowerCase()); ingredients.push(t); }
+  }
+  const season = ['warm', 'kalt'].includes(body.season) ? body.season : '';
+  return name ? { name, ingredients, quick: !!body.quick, veggie: !!body.veggie, season } : null;
+}
+async function meals(request, env, reply) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  let data = await env.DATA.get('meals', 'json');
+  if (!data) {
+    data = { ideas: STARTER_MEALS.map(m => ({ id: crypto.randomUUID().slice(0, 8), name: m[0], ingredients: m[1].split(', '),
+      quick: m[2], veggie: m[3], season: m[4], lastCooked: null, cooked: 0 })), updated: new Date().toISOString() };
+    await env.DATA.put('meals', JSON.stringify(data));
+  }
+  if (request.method === 'GET') return reply(200, data);
+
+  let body;
+  try { body = await readBody(request, 4000); } catch (e) { return reply(400, { error: 'bad request' }); }
+  const I = data.ideas, i = I.findIndex(x => x.id === body.id);
+  if (body.op === 'add' || body.op === 'edit') {
+    const m = mealFrom(body);
+    if (!m) return reply(400, { error: 'invalid' });
+    if (body.op === 'add') {
+      if (I.length >= MAX_MEALS) return reply(409, { error: 'full' });
+      I.push({ id: crypto.randomUUID().slice(0, 8), ...m, lastCooked: null, cooked: 0 });
+    } else {
+      if (i < 0) return reply(404, { error: 'gone' });
+      Object.assign(I[i], m);
+    }
+  } else if (body.op === 'remove') {
+    if (i >= 0) I.splice(i, 1);
+  } else if (body.op === 'cooked') {
+    if (i < 0) return reply(404, { error: 'gone' });
+    I[i].lastCooked = fmtDate(utcToWall(Date.now(), TZ));
+    I[i].cooked = (I[i].cooked || 0) + 1;
+  } else {
+    return reply(400, { error: 'unknown op' });
+  }
+  data.updated = new Date().toISOString();
+  await env.DATA.put('meals', JSON.stringify(data));
   return reply(200, data);
 }
