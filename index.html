@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-12T21:34:23">
+<meta name="build" content="2026-10-12T21:41:43">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -110,6 +110,16 @@ button.tile,.tile[role="button"]{cursor:pointer}
 
 /* Sanftes Einblenden und Rückmeldung beim Antippen */
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* Seitenwechsel: neue Bereiche schieben sich von rechts herein, zurück wird nur sanft eingeblendet
+   (beim Zurück-Wischen animiert das iPhone schon selbst) */
+@keyframes slideIn{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:.4}to{opacity:1}}
+.view.go-fwd{animation:slideIn .3s cubic-bezier(.2,.8,.2,1)}
+.view.go-back{animation:fadeIn .2s ease-out}
+/* Platzhalter, solange Daten geladen werden */
+@keyframes shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
+.sk{display:inline-block;vertical-align:middle;height:.8em;width:120px;max-width:100%;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%);background-size:200% 100%;animation:shimmer 1.3s linear infinite}
+.today .sk{height:14px}
 #home.intro #hero,#home.intro .tile{animation:rise .55s both}
 #home.intro .homegrid > :nth-child(1){animation-delay:.06s}
 #home.intro .homegrid > :nth-child(2){animation-delay:.12s}
@@ -418,30 +428,30 @@ html.compact .subhead .seg{order:2;width:100%}
           <div><div class="tv" style="font-size:22px">Termine</div><div class="tk">Heute &amp; morgen <span id="calMore"></span></div></div></div>
         <button class="gear" type="button" data-go="einstellungen" aria-label="Einstellungen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9D4EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
       </div>
-      <div id="calHome"><div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">Kalender wird geladen …</div></div></div>
+      <div id="calHome"><div class="evt"><div class="bar" style="background:rgba(255,255,255,.1)"></div><span class="sk" style="width:180px"></span></div><div class="evt"><div class="bar" style="background:rgba(255,255,255,.1)"></div><span class="sk" style="width:140px"></span></div><div class="evt"><div class="bar" style="background:rgba(255,255,255,.1)"></div><span class="sk" style="width:160px"></span></div></div>
     </div>
 
     <div id="wx" class="tile" data-go="wetter" role="button" tabindex="0" aria-label="Ausführliches Wetter öffnen">
       <div class="th"><span class="ic" id="wxIcon"></span>
-        <div style="min-width:0"><div class="tk">Wetter · <span id="wxText">wird geladen …</span></div><div id="wxTemp" class="tv num">--°</div></div></div>
+        <div style="min-width:0"><div class="tk">Wetter · <span id="wxText"><span class="sk" style="width:70px"></span></span></div><div id="wxTemp" class="tv num"><span class="sk" style="width:60px;height:26px"></span></div></div></div>
       <div class="ts" id="wxRange">&nbsp;</div>
       <div id="days" class="days"></div>
     </div>
 
     <div id="indoor" class="tile">
       <div class="th"><span class="ic" style="background:rgba(111,211,184,.16);color:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7M5 10v10h14V10"></path><path d="M12 12v4"></path><circle cx="12" cy="17" r="1.6"></circle></svg></span>
-        <div style="min-width:0"><div class="tk">Drinnen</div><div id="inTemp" class="tv num">--°</div></div></div>
-      <div class="ts"><span id="inHum"></span><span id="inState">wird geladen …</span></div>
+        <div style="min-width:0"><div class="tk">Drinnen</div><div id="inTemp" class="tv num"><span class="sk" style="width:80px;height:26px"></span></div></div></div>
+      <div class="ts"><span id="inHum"></span><span id="inState"><span class="sk" style="width:140px"></span></span></div>
     </div>
 
     <button id="trash" class="tile" type="button" data-go="muell">
       <span class="th"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg></span>
-        <span style="min-width:0"><span id="trashWhen" class="tk" style="display:block">Müllabfuhr</span><span id="trashWhat" class="tv" style="display:block">wird geladen …</span></span></span>
+        <span style="min-width:0"><span id="trashWhen" class="tk" style="display:block">Müllabfuhr</span><span id="trashWhat" class="tv" style="display:block"><span class="sk" style="width:130px;height:24px"></span></span></span></span>
     </button>
 
     <button id="commuteTile" class="tile lvl-none" type="button" aria-label="Arbeitsweg in Google Maps öffnen">
       <span class="th"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17l1.5-6h9L18 17M7.5 11l1-3.5h7l1 3.5"></path><circle cx="8" cy="17.5" r="1.6"></circle><circle cx="16" cy="17.5" r="1.6"></circle></svg></span>
-        <span style="min-width:0"><span id="commuteSmall" class="tk" style="display:block">Zur Arbeit</span><span id="commuteBig" class="tv" style="display:block">wird geladen …</span></span></span>
+        <span style="min-width:0"><span id="commuteSmall" class="tk" style="display:block">Zur Arbeit</span><span id="commuteBig" class="tv" style="display:block"><span class="sk" style="width:100px;height:24px"></span></span></span></span>
     </button>
   </div>
 
@@ -856,7 +866,14 @@ html.compact .subhead .seg{order:2;width:100%}
         else history.pushState({ v: id, n: name || '' }, '', '#' + id);
       }
     }
+    var prev = VIEWS.filter(function(v){ return !$(v).hidden; })[0];
     VIEWS.forEach(function(v){ $(v).hidden = (v !== id); });
+    if (prev && prev !== id){
+      var el = $(id);
+      el.classList.remove('go-fwd', 'go-back'); void el.offsetWidth;
+      el.classList.add(fromHistory || id === 'home' ? 'go-back' : 'go-fwd');
+      clearTimeout(viewAnimT); viewAnimT = setTimeout(function(){ el.classList.remove('go-fwd', 'go-back'); }, 450); // falls animationend ausbleibt
+    }
     [].forEach.call(document.querySelectorAll('nav [data-go]'), function(b){
       if (b.getAttribute('data-go') === id && (id !== 'soon' || b.getAttribute('data-name') === name)) b.setAttribute('aria-current', 'page');
       else b.removeAttribute('aria-current');
@@ -874,6 +891,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (id === 'pinnwand'){ markNotesSeen(); fetchNotes(); }
     closeNote();
   }
+  var viewAnimT = null;
   window.addEventListener('popstate', function(e){
     var st = e.state || {}, v = st.v || location.hash.slice(1); // ohne Zustand (z. B. Link auf #pinnwand) gilt die Adresse
     show(v && VIEWS.indexOf(v) >= 0 && v !== 'soon' ? v : 'home', st.n, true);
@@ -998,6 +1016,7 @@ html.compact .subhead .seg{order:2;width:100%}
       recheckIdea();
     }).catch(function(){
       $('wxText').textContent = 'Wetter gerade nicht erreichbar';
+      if ($('wxTemp').querySelector('.sk')) $('wxTemp').textContent = '--°';
       if (!$('wetter').hidden) $('wxUpdated').textContent = 'Nicht erreichbar';
     });
   }
@@ -1325,7 +1344,8 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!calData){
       var msg = calError === 'nokey' ? 'Kalender noch nicht verbunden' : calError === 'auth' ? 'Zugangsschlüssel stimmt nicht' : calError === 'net' ? 'Kalender gerade nicht erreichbar' : 'Kalender wird geladen …';
       var hint = (calError === 'nokey' || calError === 'auth') ? 'Zum Einrichten auf das Zahnrad tippen' : '';
-      home.innerHTML = '<div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">' + msg + '</div></div>' +
+      if (!calError){ home.innerHTML = [180, 140, 160].map(function(w){ return '<div class="evt"><div class="bar" style="background:rgba(255,255,255,.1)"></div><span class="sk" style="width:' + w + 'px"></span></div>'; }).join(''); }
+      else home.innerHTML = '<div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">' + msg + '</div></div>' +
         (hint ? '<div class="evt"><div class="bar" style="background:var(--orange)"></div><div class="tt" style="color:var(--soft)">' + hint + '</div></div>' : '');
     } else {
       var list = [];
@@ -1449,7 +1469,8 @@ html.compact .subhead .seg{order:2;width:100%}
   }
   function setTile(bg, fg, when, what){
     var t = $('trash'); t.style.setProperty('--binbg', bg); t.style.setProperty('--binfg', fg);
-    $('trashWhen').textContent = when; $('trashWhat').textContent = what;
+    $('trashWhen').textContent = when;
+    if (what === 'wird geladen …') $('trashWhat').innerHTML = '<span class="sk" style="width:130px;height:24px"></span>'; else $('trashWhat').textContent = what;
   }
   function renderTrash(){
     var now = new Date();
@@ -1472,7 +1493,7 @@ html.compact .subhead .seg{order:2;width:100%}
     }
     renderToday();
     // Detailansicht
-    $('binGrid').innerHTML = !bins.length ? '<div class="bin" style="background:var(--tile)"><div class="nm">' + esc($('trashWhat').textContent) + '</div>' +
+    $('binGrid').innerHTML = !bins.length ? '<div class="bin" style="background:var(--tile)"><div class="nm">' + esc($('trashWhat').textContent || 'Wird geladen …') + '</div>' +
       '<div class="ln"><span>' + (trashError === 'address' ? 'Bitte die hinterlegte Adresse prüfen.' : trashError === 'setup' ? 'Die Adresse muss noch beim Vermittler hinterlegt werden.' : 'Die Termine erscheinen, sobald die Verbindung steht.') + '</span></div></div>' : bins.map(function(b){
       var c = binInfo(b.type);
       return '<div class="bin" style="background:' + c.bg + ';color:' + c.fg + '"><div class="nm">' + esc(c.name) + '</div>' +
@@ -2218,7 +2239,8 @@ html.compact .subhead .seg{order:2;width:100%}
         g.late.length ? g.late.length + ' überfällig' : imp ? imp + ' wichtig' : '', 'aufgaben', g.late.length > 0]);
     }
     if (commuteData) items.push(['car', commuteData.minutes + ' Min. zur Arbeit', commuteData.delay <= 1 ? 'freie Fahrt' : '+' + commuteData.delay + ' Min.', '', commuteData.delay > 10]);
-    if (!items.length) items.push(getKey() ? ['cal', 'Daten werden geladen …', '', ''] : ['key', 'Noch nicht verbunden', 'Einrichten', 'einstellungen', true]);
+    if (!items.length && getKey()){ $('today').innerHTML = [170, 130, 150].map(function(w){ return '<div class="it"><span class="sk" style="width:' + w + 'px"></span></div>'; }).join(''); return; }
+    if (!items.length) items.push(['key', 'Noch nicht verbunden', 'Einrichten', 'einstellungen', true]);
     var max = document.documentElement.classList.contains('compact') ? 5 : 4;
     $('today').innerHTML = items.slice(0, max).map(function(x){
       return (x[3] ? '<button type="button" class="it' + (x[4] ? ' hot' : '') + '" data-go="' + x[3] + '">' : '<div class="it' + (x[4] ? ' hot' : '') + '">') +
