@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-11T11:29:13">
+<meta name="build" content="2026-10-12T09:07:01">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -76,7 +76,7 @@ button{font-family:var(--body)}
 .round{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:16px}
 
 /* Navigation */
-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-gap:12px}
+nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px}
 nav button{background:var(--tile);border:0;border-radius:999px;height:62px;display:flex;align-items:center;padding:0 10px;font-size:18px;font-weight:700;color:var(--fg);cursor:pointer}
 nav button .round{width:44px;height:44px;margin-right:12px}
 button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
@@ -182,6 +182,29 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .d7 .t small{font-size:16px;color:var(--soft)}
 .d7 .r{font-size:13px;font-weight:700;color:var(--blue);margin-top:4px}
 .d7 .w{font-size:12px;font-weight:600;color:var(--soft)}
+
+/* Aufgaben */
+.tasklist{overflow-y:auto;min-height:0}
+.tgroup{font-size:15px;font-weight:700;margin:16px 0 4px;display:flex;align-items:center}
+.tgroup:first-child{margin-top:4px}
+.tgroup .dot{width:10px;height:10px;border-radius:9px;margin-right:8px}
+.task{display:flex;align-items:center;background:var(--tile2);border-radius:14px;margin-top:6px;min-height:54px}
+.task .chk{width:54px;height:54px;flex-shrink:0;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.task .chk span{width:26px;height:26px;border-radius:8px;border:3px solid var(--blue);display:flex;align-items:center;justify-content:center}
+.task.imp .chk span{border-color:var(--orange)}
+.task .body{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);text-align:left;cursor:pointer;padding:8px 14px 8px 0;font-family:var(--body)}
+.task .tt{font-size:18px;font-weight:700;overflow-wrap:anywhere}
+.task .mt{font-size:13px;font-weight:700;color:var(--soft);margin-top:2px}
+.task .mt .late{color:#FF9A7A}
+.task .imp-flag{display:inline-block;background:var(--orange);color:#2A1608;border-radius:6px;font-size:12px;font-weight:800;padding:1px 6px;margin-right:6px;vertical-align:2px}
+.task.done{opacity:.55}
+.task.done .tt{text-decoration:line-through}
+.task.done .chk span{background:var(--blue)}
+#taskNew{display:none}
+html.compact #taskNew{display:block}
+.quick{display:flex;flex-wrap:wrap;margin:6px -3px 0}
+.quick button{background:var(--tile2);border:0;border-radius:999px;padding:8px 13px;margin:3px;font-size:15px;font-weight:700;color:var(--fg);cursor:pointer;font-family:var(--body)}
+.quick button[aria-pressed="true"]{background:var(--blue);color:#0D1F3A}
 
 /* Arbeitsweg */
 #commuteTile .round{transition:background .3s}
@@ -413,6 +436,7 @@ html.compact .subhead .seg{order:2;width:100%}
     <button type="button" data-go="einkauf"><span class="round" style="background:#8ED39A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.5 11h11L21 8H7"></path><circle cx="9" cy="20" r="1.3"></circle><circle cx="17" cy="20" r="1.3"></circle></svg></span>Einkauf<span id="shopBadge" class="badge" hidden></span></button>
     <button type="button" data-go="essen"><span class="round" style="background:#F2A3B5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A0D18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.5 0-4 2.5-4 7h4"></path></svg></span>Essen</button>
     <button type="button" data-go="kalender"><span class="round" style="background:var(--violet)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#24123F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>Kalender</button>
+    <button type="button" data-go="aufgaben"><span class="round" style="background:var(--blue)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1F3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg></span>Aufgaben<span id="taskBadge" class="badge" hidden style="background:var(--orange);color:#2A1608"></span></button>
     <button type="button" data-go="pinnwand"><span class="round" style="background:var(--yellow)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2A2208" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"></path></svg></span>Pinnwand<span id="notesBadge" class="badge" hidden></span></button>
   </nav>
 </section>
@@ -462,6 +486,52 @@ html.compact .subhead .seg{order:2;width:100%}
         <button class="primary" type="submit">Speichern</button>
       </form>
     </div>
+  </div>
+</section>
+
+<!-- ===== Aufgaben ===== -->
+<section id="aufgaben" class="view sub" aria-label="Aufgaben" hidden>
+  <div class="subhead">
+    <button class="back" type="button" data-go="home"><span class="round"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></span>Zurück</button>
+    <div class="subtitle">Aufgaben</div>
+    <div class="chip" id="taskState">&nbsp;</div>
+  </div>
+  <div class="row">
+    <div class="card span2" style="display:flex;flex-direction:column">
+      <button type="button" class="btn main" id="taskNew" style="background:var(--blue);color:#0D1F3A;margin-bottom:6px">+ Neue Aufgabe</button>
+      <div id="taskList" class="tasklist"></div>
+    </div>
+    <form id="taskForm" class="card tform" novalidate autocomplete="off" style="overflow-y:auto">
+      <div class="formhead"><div id="taskTitle" style="font-family:var(--display);font-size:24px">Neue Aufgabe</div><button type="button" class="linkbtn" id="taskCancel" hidden>× Abbrechen</button></div>
+      <label for="taskText">Was ist zu tun?<input id="taskText" type="text" maxlength="200" placeholder="z. B. Reifen wechseln"></label>
+      <label style="margin-bottom:0">Fällig</label>
+      <div class="quick" id="taskQuick" role="group" aria-label="Fälligkeit">
+        <button type="button" data-due="none">Ohne</button>
+        <button type="button" data-due="today">Heute</button>
+        <button type="button" data-due="tomorrow">Morgen</button>
+        <button type="button" data-due="weekend">Wochenende</button>
+        <button type="button" data-due="nextweek">Nächste Woche</button>
+      </div>
+      <label for="taskDue">oder Datum<input id="taskDue" type="date"></label>
+      <div class="pair">
+        <button type="button" class="tog" id="taskImp" aria-pressed="false" style="--x:0"><span class="bx" style="border-color:var(--orange)"></span>Wichtig</button>
+        <label for="taskRepeat" style="margin-top:8px">Wiederholen<select id="taskRepeat">
+          <option value="">nicht</option>
+          <option value="1-day">täglich</option>
+          <option value="1-week">wöchentlich</option>
+          <option value="2-week">alle 2 Wochen</option>
+          <option value="1-month">monatlich</option>
+          <option value="3-month">alle 3 Monate</option>
+          <option value="6-month">halbjährlich</option>
+          <option value="1-year">jährlich</option>
+        </select></label>
+      </div>
+      <div class="btnrow">
+        <button class="btn main" type="submit" style="background:var(--blue);color:#0D1F3A">Speichern</button>
+        <button class="btn alt" type="button" id="taskDel" hidden>Löschen</button>
+      </div>
+      <div id="taskMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:10px"></div>
+    </form>
   </div>
 </section>
 
@@ -724,6 +794,8 @@ html.compact .subhead .seg{order:2;width:100%}
   var BD_URL = API + '/birthdays';
   var MEALS_URL = API + '/meals';
   var COMMUTE_URL = API + '/commute';
+  var TASKS_URL = API + '/tasks';
+  var TASKS_CACHE = 'wanddash.tasks.v1';
   var COMMUTE_MS = 5 * 60 * 1000;     // Fahrzeit alle 5 Minuten
   var MEALS_CACHE = 'wanddash.meals.v1';
   var MEALS_FILTER = 'wanddash.meals.filter';
@@ -754,7 +826,7 @@ html.compact .subhead .seg{order:2;width:100%}
   window.addEventListener('resize', fit); fit();
 
   /* ---------- Ansichten (mit Browser-Verlauf, damit Zurück-Wischen funktioniert) ---------- */
-  var VIEWS = ['home','wetter','verbrauch','kalender','muell','einkauf','pinnwand','essen','einstellungen','soon'];
+  var VIEWS = ['home','wetter','verbrauch','kalender','aufgaben','muell','einkauf','pinnwand','essen','einstellungen','soon'];
   function show(id, name, fromHistory){
     if (!fromHistory){
       if (id === 'home' && history.state && history.state.v){ history.back(); return; }
@@ -770,6 +842,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (id === 'verbrauch'){ renderMeter(); fetchMeter(); }
     if (id === 'kalender'){ renderCalendar(); fetchBirthdays(); }
     if (id === 'wetter') renderWeather();
+    if (id === 'aufgaben'){ renderTasks(); fetchTasks(); }
     if (id === 'essen'){ if (!ideaId) pickIdea(); renderMeals(); fetchMeals(); }
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
@@ -828,7 +901,7 @@ html.compact .subhead .seg{order:2;width:100%}
     $('greet').textContent = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Guten Tag' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
     paintSky(skyPhase(now));
     meterHint(now);
-    if (calDay !== dayKey(now)) renderCalendar();
+    if (calDay !== dayKey(now)){ renderCalendar(); if (typeof renderTasks === 'function') renderTasks(); }
     if (trashHour !== dayKey(now) + now.getHours()) renderTrash();
   }
   // Hinweis „Zähler ablesen“: ab 2 Tage vor dem Ablesetag bis zum 5., solange in dem Zeitraum noch nichts eingetragen ist
@@ -1283,7 +1356,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!setKey(k)){ msg.textContent = 'Speichern hat nicht geklappt.'; return; }
     msg.textContent = 'Wird getestet …';
     fetchCalendar(function(ok){
-      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); fetchMeals(); fetchCommute(); return; }
+      if (ok){ msg.textContent = 'Verbunden. ' + calData.events.length + ' Termine in den nächsten 7 Tagen.'; $('inKey').value = ''; openSettingsState(); fetchTrash(); fetchClimate(); fetchShop(); fetchMeter(); fetchNotes(); fetchBirthdays(); fetchMeals(); fetchCommute(); fetchTasks(); return; }
       if (calError === 'auth'){ setKey(old); msg.textContent = 'Der Schlüssel stimmt nicht. Bitte nochmal prüfen.'; fetchCalendar(); }
       else msg.textContent = 'Gespeichert, aber der Kalender ist gerade nicht erreichbar.';
       openSettingsState();
@@ -1492,6 +1565,164 @@ html.compact .subhead .seg{order:2;width:100%}
     if (!$('einkauf').hidden || Date.now() - shopAt > 5 * 60 * 1000) fetchShop();
   }, 60 * 1000);
   fetchShop();
+
+  /* ---------- Aufgaben (gemeinsamer Speicher beim Vermittler) ---------- */
+  var tasksData = null, tasksError = '', tasksBusy = false, taskEditId = null, confirmTaskDel = false, showDone = false;
+  try { tasksData = JSON.parse(localStorage.getItem(TASKS_CACHE) || 'null'); } catch (e) { tasksData = null; }
+  var REPEAT_TEXT = { '1-day': 'täglich', '1-week': 'wöchentlich', '2-week': 'alle 2 Wochen', '1-month': 'monatlich', '3-month': 'alle 3 Monate', '6-month': 'halbjährlich', '1-year': 'jährlich' };
+  function tasksReq(body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(TASKS_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (r.status === 400) throw new Error('invalid');
+      if (r.status === 404) throw new Error('gone');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    });
+  }
+  function gotTasks(d){ tasksData = d; tasksError = ''; try { localStorage.setItem(TASKS_CACHE, JSON.stringify(d)); } catch (e) {} renderTasks(); }
+  function fetchTasks(){ tasksReq().then(gotTasks).catch(function(e){ tasksError = (e && e.message) || 'net'; renderTasks(); }); }
+  function addDays(k, n){ var d = parseDay(k); return dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)); }
+  function quickDue(kind){
+    var now = new Date(), t = dayKey(now), wd = now.getDay(); // 0 = Sonntag
+    if (kind === 'today') return t;
+    if (kind === 'tomorrow') return addDays(t, 1);
+    if (kind === 'weekend') return wd === 6 || wd === 0 ? t : addDays(t, 6 - wd);
+    if (kind === 'nextweek') return addDays(t, wd === 0 ? 1 : 8 - wd);
+    return '';
+  }
+  function dueText(k, today){
+    var n = Math.round((parseDay(k) - parseDay(today)) / 86400000), d = parseDay(k);
+    if (n < 0) return '<span class="late">überfällig seit ' + (n === -1 ? 'gestern' : -n + ' Tagen') + '</span>';
+    if (n === 0) return 'heute'; if (n === 1) return 'morgen';
+    return DAYS_SHORT[d.getDay()] + ', ' + d.getDate() + '. ' + MONTHS_SHORT[d.getMonth()] + (n < 7 ? '' : ' · in ' + n + ' Tagen');
+  }
+  function taskGroups(){
+    var today = dayKey(new Date()), wd = new Date().getDay(), weekEnd = addDays(today, wd === 0 ? 0 : 7 - wd);
+    var g = { late: [], today: [], week: [], later: [], someday: [], done: [] };
+    (tasksData ? tasksData.tasks : []).forEach(function(t){
+      if (t.done) g.done.push(t);
+      else if (!t.due) g.someday.push(t);
+      else if (t.due < today) g.late.push(t);
+      else if (t.due === today) g.today.push(t);
+      else if (t.due <= weekEnd) g.week.push(t);
+      else g.later.push(t);
+    });
+    var byImp = function(a, b){ return (b.important - a.important) || ((a.due || '9') < (b.due || '9') ? -1 : (a.due || '9') > (b.due || '9') ? 1 : a.created < b.created ? -1 : 1); };
+    Object.keys(g).forEach(function(k){ if (k !== 'done') g[k].sort(byImp); });
+    g.done.sort(function(a, b){ return a.doneAt < b.doneAt ? 1 : -1; });
+    return { g: g, today: today };
+  }
+  function taskRow(t, today){
+    var meta = [];
+    if (t.due && !t.done) meta.push(dueText(t.due, today));
+    if (t.repeat) meta.push('↻ ' + (REPEAT_TEXT[t.repeat.every + '-' + t.repeat.unit] || 'alle ' + t.repeat.every + ' ' + t.repeat.unit));
+    if (t.done) meta.push('erledigt');
+    return '<div class="task' + (t.important ? ' imp' : '') + (t.done ? ' done' : '') + '">' +
+      '<button type="button" class="chk" data-check="' + esc(t.id) + '" aria-label="' + (t.done ? 'Wieder öffnen' : 'Erledigt') + '"><span>' +
+      (t.done ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0D1F3A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>' : '') + '</span></button>' +
+      '<button type="button" class="body" data-task="' + esc(t.id) + '"><div class="tt">' + (t.important ? '<span class="imp-flag">!</span>' : '') + esc(t.text) + '</div>' +
+      (meta.length ? '<div class="mt">' + meta.join(' · ') + '</div>' : '') + '</button></div>';
+  }
+  function renderTasks(){
+    var x = taskGroups(), g = x.g, urgent = g.late.length + g.today.length;
+    $('taskBadge').hidden = !urgent; $('taskBadge').textContent = urgent || '';
+    var open = g.late.length + g.today.length + g.week.length + g.later.length + g.someday.length;
+    $('taskState').textContent = tasksData ? open + ' offen' + (urgent ? ' · ' + urgent + ' fällig' : '') :
+      tasksError === 'nokey' ? 'Nicht verbunden' : tasksError === 'auth' ? 'Schlüssel falsch' : tasksError ? 'Nicht erreichbar' : 'Wird geladen …';
+    var groups = [['late', 'Überfällig', '#FF9A7A'], ['today', 'Heute', 'var(--orange)'], ['week', 'Diese Woche', 'var(--yellow)'], ['later', 'Später', 'var(--blue)'], ['someday', 'Irgendwann', 'var(--muted)']];
+    var html = '';
+    groups.forEach(function(gr){
+      if (!g[gr[0]].length) return;
+      html += '<div class="tgroup" style="color:' + gr[2] + '"><span class="dot" style="background:' + gr[2] + '"></span>' + gr[1] + ' (' + g[gr[0]].length + ')</div>' +
+        g[gr[0]].map(function(t){ return taskRow(t, x.today); }).join('');
+    });
+    if (tasksData && !open) html += '<div style="font-size:19px;color:var(--soft);padding:10px 2px">Alles erledigt. 🎉 Rechts kannst du eine neue Aufgabe anlegen.</div>';
+    if (g.done.length){
+      html += '<div class="tgroup" style="color:var(--soft)"><button type="button" class="linkbtn" id="taskDoneToggle" style="padding:0">' + (showDone ? '▾' : '▸') + ' Erledigt (' + g.done.length + ')</button>' +
+        (showDone ? '<button type="button" class="linkbtn" id="taskClear" style="margin-left:auto;padding:0">Erledigte löschen</button>' : '') + '</div>';
+      if (showDone) html += g.done.map(function(t){ return taskRow(t, x.today); }).join('');
+    }
+    $('taskList').innerHTML = html;
+  }
+  function setQuick(due){
+    var map = { today: quickDue('today'), tomorrow: quickDue('tomorrow'), weekend: quickDue('weekend'), nextweek: quickDue('nextweek') };
+    [].forEach.call(document.querySelectorAll('#taskQuick [data-due]'), function(b){
+      var k = b.getAttribute('data-due');
+      b.setAttribute('aria-pressed', String(k === 'none' ? !due : due === map[k]));
+    });
+    $('taskDue').value = due || '';
+  }
+  function taskForm(t){
+    taskEditId = t ? t.id : null; confirmTaskDel = false;
+    $('taskTitle').textContent = t ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
+    $('taskText').value = t ? t.text : '';
+    setQuick(t ? t.due : '');
+    setTog($('taskImp'), t && t.important);
+    $('taskRepeat').value = t && t.repeat ? t.repeat.every + '-' + t.repeat.unit : '';
+    $('taskCancel').hidden = $('taskDel').hidden = !t;
+    $('taskDel').textContent = 'Löschen';
+  }
+  function taskSay(t){ $('taskMsg').textContent = t; clearTimeout(taskSay.t); taskSay.t = setTimeout(function(){ $('taskMsg').textContent = ''; }, 5000); }
+  function taskDo(body, okText, after){
+    if (tasksBusy) return; tasksBusy = true;
+    tasksReq(body).then(function(d){ gotTasks(d); if (after) after(d); if (okText) taskSay(okText); })
+      .catch(function(e){
+        var m = e && e.message;
+        taskSay(m === 'nokey' ? 'Erst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Zugangsschlüssel stimmt nicht.' : m === 'invalid' ? 'Bitte Text und Datum prüfen.' :
+          m === 'gone' ? 'Die Aufgabe wurde inzwischen auf einem anderen Gerät gelöscht.' : 'Hat nicht geklappt – keine Verbindung.');
+        if (m === 'gone'){ taskForm(null); fetchTasks(); }
+      })
+      .then(function(){ tasksBusy = false; });
+  }
+  function taskById(id){ var r = null; (tasksData ? tasksData.tasks : []).forEach(function(t){ if (t.id === id) r = t; }); return r; }
+  $('taskList').addEventListener('click', function(e){
+    var c = e.target.closest ? e.target.closest('[data-check]') : null;
+    if (c){
+      var t = taskById(c.getAttribute('data-check'));
+      if (!t) return;
+      if (t.done) taskDo({ op: 'undo', id: t.id }, 'Wieder geöffnet.');
+      else taskDo({ op: 'done', id: t.id }, null, function(d){
+        var n = null; d.tasks.forEach(function(x){ if (x.id === t.id) n = x; });
+        taskSay(t.repeat && n ? 'Erledigt – nächstes Mal ' + dueText(n.due, dayKey(new Date())).replace(/<[^>]+>/g, '') + '.' : 'Erledigt. 👍');
+      });
+      return;
+    }
+    var b = e.target.closest ? e.target.closest('[data-task]') : null;
+    if (b){
+      taskForm(taskById(b.getAttribute('data-task'))); $('taskMsg').textContent = '';
+      if (document.documentElement.classList.contains('compact')) $('taskForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (e.target.id === 'taskDoneToggle'){ showDone = !showDone; renderTasks(); return; }
+    if (e.target.id === 'taskClear') taskDo({ op: 'clearDone' }, 'Erledigte gelöscht.');
+  });
+  $('taskQuick').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-due]') : null;
+    if (b) setQuick(quickDue(b.getAttribute('data-due')));
+  });
+  $('taskDue').addEventListener('change', function(){ setQuick(this.value); });
+  $('taskImp').addEventListener('click', function(){ setTog(this, this.getAttribute('aria-pressed') !== 'true'); });
+  $('taskForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var text = $('taskText').value.trim(), due = $('taskDue').value, rep = $('taskRepeat').value;
+    if (!text){ taskSay('Bitte eintragen, was zu tun ist.'); return; }
+    var body = { op: taskEditId ? 'edit' : 'add', text: text, due: due || null, important: $('taskImp').getAttribute('aria-pressed') === 'true',
+      repeat: rep ? { every: parseInt(rep, 10), unit: rep.split('-')[1] } : null };
+    if (taskEditId) body.id = taskEditId;
+    var wasEdit = !!taskEditId;
+    taskDo(body, wasEdit ? 'Geändert.' : 'Gespeichert.', function(){ taskForm(null); });
+  });
+  $('taskCancel').addEventListener('click', function(){ taskForm(null); $('taskMsg').textContent = ''; });
+  $('taskNew').addEventListener('click', function(){ taskForm(null); $('taskForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(function(){ $('taskText').focus(); }, 350); });
+  $('taskDel').addEventListener('click', function(){
+    if (!confirmTaskDel){ confirmTaskDel = true; this.textContent = 'Wirklich löschen?'; return; }
+    if (taskEditId) taskDo({ op: 'remove', id: taskEditId }, 'Gelöscht.', function(){ taskForm(null); });
+  });
+  taskForm(null); renderTasks(); fetchTasks(); setInterval(fetchTasks, 10 * 60 * 1000);
 
   /* ---------- Arbeitsweg (TomTom über den Vermittler) ---------- */
   var commuteData = null;
@@ -1920,7 +2151,7 @@ html.compact .subhead .seg{order:2;width:100%}
   document.addEventListener('visibilitychange', function(){
     if (document.hidden || Date.now() - lastWake < 60 * 1000) return;
     lastWake = Date.now();
-    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays(); fetchCommute();
+    tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays(); fetchCommute(); fetchTasks();
     if (!$('verbrauch').hidden) fetchMeter();
   });
 

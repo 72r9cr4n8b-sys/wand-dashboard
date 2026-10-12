@@ -22,6 +22,8 @@
  * GET /birthdays → Geburtstagsliste
  * POST /birthdays  {op:"add",name,day,month,year?} | {op:"edit",id,name,day,month,year?} | {op:"remove",id}
  * GET /commute → aktuelle Fahrzeit zur Arbeit mit Verkehr (TomTom)
+ * GET /tasks → Aufgaben
+ * POST /tasks  {op:"add"|"edit",id?,text,due,important,repeat} | {op:"done",id} | {op:"undo",id} | {op:"remove",id} | {op:"clearDone"}
  * GET /meals → Essensideen (beim ersten Abruf mit einer Startsammlung gefüllt)
  * POST /meals  {op:"add"|"edit",id?,name,ingredients,quick,veggie,season} | {op:"remove",id} | {op:"cooked",id}
  */
@@ -61,8 +63,8 @@ export default {
     const url = new URL(request.url);
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
-    const writable = listName || ['/meter', '/notes', '/birthdays', '/meals'].includes(url.pathname);
-    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals', '/commute'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    const writable = listName || ['/meter', '/notes', '/birthdays', '/meals', '/tasks'].includes(url.pathname);
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals', '/commute', '/tasks'].includes(url.pathname)) return reply(404, { error: 'not found' });
     if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
@@ -76,6 +78,7 @@ export default {
     if (url.pathname === '/birthdays') return birthdays(request, env, reply);
     if (url.pathname === '/meals') return meals(request, env, reply);
     if (url.pathname === '/commute') return commute(env, reply);
+    if (url.pathname === '/tasks') return tasks(request, env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -506,7 +509,12 @@ function num(v, max) {
   const n = Number(v);
   return isFinite(n) && n >= 0 && n <= max ? Math.round(n * 1e6) / 1e6 : undefined;
 }
-function isDay(d) { return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(Date.parse(d)); }
+function isDay(d) {
+  const m = typeof d === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+  if (!m) return false;
+  const t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); // 2026-02-30 würde zum 2. März – das zählt nicht
+  return t.getUTCFullYear() === +m[1] && t.getUTCMonth() === +m[2] - 1 && t.getUTCDate() === +m[3];
+}
 async function meter(request, env, reply) {
   if (!env.DATA) return reply(500, { error: 'not configured' });
   const data = (await env.DATA.get('meter', 'json')) || { readings: [], tariff: {}, updated: null };
@@ -767,4 +775,80 @@ async function commute(env, reply) {
     if (commuteMemo && commuteMemo.key === memoKey && Date.now() - commuteMemo.at < 60 * 60 * 1000) return reply(200, { ...commuteMemo.body, stale: true });
     return reply(502, { error: 'tomtom unreachable' });
   }
+}
+
+/* ---------- Aufgaben (KV) ---------- */
+const MAX_TASKS = 300, MAX_TASK_TEXT = 200;
+const REPEAT_UNITS = ['day', 'week', 'month', 'year'];
+// Datum (JJJJ-MM-TT) um n Einheiten weiterschieben; Monatsende wird gekappt (31. Jan + 1 Monat = 28./29. Feb)
+function addInterval(day, n, unit) {
+  const [y, m, d] = day.split('-').map(Number);
+  if (unit === 'day' || unit === 'week') return fmtDate(Date.UTC(y, m - 1, d + n * (unit === 'week' ? 7 : 1)));
+  const months = unit === 'year' ? n * 12 : n;
+  const ty = y + Math.floor((m - 1 + months) / 12), tm = (m - 1 + months) % 12;
+  const dim = new Date(Date.UTC(ty, tm + 1, 0)).getUTCDate();
+  return fmtDate(Date.UTC(ty, tm, Math.min(d, dim)));
+}
+function taskFrom(body) {
+  const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TASK_TEXT);
+  if (!text) return null;
+  const due = body.due ? String(body.due) : null;
+  if (due !== null && !isDay(due)) return null;
+  let repeat = null;
+  if (body.repeat) {
+    const every = Number(body.repeat.every), unit = body.repeat.unit;
+    if (!Number.isInteger(every) || every < 1 || every > 365 || !REPEAT_UNITS.includes(unit)) return null;
+    repeat = { every, unit };
+  }
+  return { text, due, important: !!body.important, repeat };
+}
+async function tasks(request, env, reply) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  const data = (await env.DATA.get('tasks', 'json')) || { tasks: [], updated: null };
+  if (request.method === 'GET') return reply(200, data);
+
+  let body;
+  try { body = await readBody(request, 3000); } catch (e) { return reply(400, { error: 'bad request' }); }
+  const T = data.tasks, i = T.findIndex(x => x.id === body.id);
+  const today = fmtDate(utcToWall(Date.now(), TZ));
+  const now = new Date().toISOString();
+  if (body.op === 'add' || body.op === 'edit') {
+    const t = taskFrom(body);
+    if (!t) return reply(400, { error: 'invalid' });
+    if (t.repeat && !t.due) t.due = today; // Wiederholungen brauchen einen Starttermin
+    t.anchor = t.repeat ? t.due : null;    // Bezugstermin, damit z. B. „jeden 31.“ nicht auf den 28. abrutscht
+    if (body.op === 'add') {
+      if (T.length >= MAX_TASKS) return reply(409, { error: 'full' });
+      T.push({ id: crypto.randomUUID().slice(0, 8), ...t, done: false, doneAt: null, lastDone: null, created: now });
+    } else {
+      if (i < 0) return reply(404, { error: 'gone' });
+      Object.assign(T[i], t);
+    }
+  } else if (body.op === 'done') {
+    if (i < 0) return reply(404, { error: 'gone' });
+    const t = T[i];
+    if (t.repeat) {
+      // Wiederkehrend: nächster Plantermin nach dem aktuellen, aber nie heute oder in der Vergangenheit
+      const anchor = t.anchor || t.due || today, from = (t.due && t.due > today) ? t.due : today;
+      let k = 1, next = addInterval(anchor, t.repeat.every, t.repeat.unit);
+      while (next <= from && k < 5000) next = addInterval(anchor, ++k * t.repeat.every, t.repeat.unit);
+      t.prevDue = t.due; t.due = next; t.lastDone = now;
+    } else {
+      t.done = true; t.doneAt = now;
+    }
+  } else if (body.op === 'undo') {
+    if (i < 0) return reply(404, { error: 'gone' });
+    const t = T[i];
+    if (t.repeat && t.prevDue) { t.due = t.prevDue; t.prevDue = null; t.lastDone = null; }
+    else { t.done = false; t.doneAt = null; }
+  } else if (body.op === 'remove') {
+    if (i >= 0) T.splice(i, 1);
+  } else if (body.op === 'clearDone') {
+    data.tasks = T.filter(x => !x.done);
+  } else {
+    return reply(400, { error: 'unknown op' });
+  }
+  data.updated = now;
+  await env.DATA.put('tasks', JSON.stringify(data));
+  return reply(200, data);
 }
