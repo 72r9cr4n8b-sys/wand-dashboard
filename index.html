@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-12T09:07:01">
+<meta name="build" content="2026-10-12T09:09:26">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -830,7 +830,11 @@ html.compact .subhead .seg{order:2;width:100%}
   function show(id, name, fromHistory){
     if (!fromHistory){
       if (id === 'home' && history.state && history.state.v){ history.back(); return; }
-      if (id !== 'home') history.pushState({ v: id, n: name || '' }, '', '#' + id);
+      // Zwischen Bereichen wechseln ersetzt den Verlaufseintrag: „Zurück“ führt so immer direkt zur Startseite
+      if (id !== 'home'){
+        if (history.state && history.state.v) history.replaceState({ v: id, n: name || '' }, '', '#' + id);
+        else history.pushState({ v: id, n: name || '' }, '', '#' + id);
+      }
     }
     VIEWS.forEach(function(v){ $(v).hidden = (v !== id); });
     [].forEach.call(document.querySelectorAll('nav [data-go]'), function(b){
