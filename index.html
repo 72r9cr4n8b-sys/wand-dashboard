@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-12T21:16:16">
+<meta name="build" content="2026-10-12T21:34:23">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1346,6 +1346,7 @@ html.compact .subhead .seg{order:2;width:100%}
         if (list.length > maxRows) more.textContent = '· ' + (list.length - maxRows) + ' weitere';
       }
       if (calError === 'net') more.textContent = '· nicht aktuell';
+      else if (calData.stale) more.textContent = '· Stand ' + hhmm(calData.updated);
     }
     renderToday();
     // Wochenansicht

@@ -41,6 +41,9 @@ const MAX_ITEMS = 150, MAX_TEXT = 80, MAX_RECENT = 30;
 const DAY = 86400000;
 
 let memo = null;      // { at, days, dayKey, body } – Zwischenspeicher je Instanz
+let icsSavedAt = 0;   // letzte Sicherung der iCal-Datei im KV (höchstens alle 30 Min.)
+const ICS_SAVE_MS = 30 * 60 * 1000;
+const ICS_STALE_MS = 3 * 24 * 60 * 60 * 1000; // gesicherten Stand höchstens 3 Tage lang verwenden
 let trashMemo = null; // { at, addr, dayKey, body }
 let climateMemo = null; // { at, body }
 let goveeDevice = null; // { sku, device } – Gerät merken, spart eine Abfrage
@@ -90,17 +93,34 @@ export default {
       return reply(200, memo.body);
     }
 
-    let ics;
-    try {
-      const r = await fetch(env.ICAL_URL, { headers: { 'User-Agent': 'wand-dashboard' } });
-      if (!r.ok) throw new Error('status ' + r.status);
-      ics = await r.text();
-    } catch (e) {
-      return reply(502, { error: 'calendar unreachable' });
+    // Google liefert die iCal-Datei gelegentlich nicht aus: einmal nachfassen, sonst den zuletzt geladenen Stand nehmen
+    let ics = null, fetchedAt = new Date().toISOString(), stale = false;
+    for (let attempt = 0; attempt < 2 && ics === null; attempt++) {
+      try {
+        const r = await fetch(env.ICAL_URL, { headers: { 'User-Agent': 'wand-dashboard' } });
+        if (!r.ok) throw new Error('status ' + r.status);
+        const text = await r.text();
+        if (!text.includes('BEGIN:VCALENDAR')) throw new Error('kein Kalender');
+        ics = text;
+      } catch (e) {
+        console.log('iCal-Abruf fehlgeschlagen (Versuch ' + (attempt + 1) + '): ' + e.message);
+        if (attempt === 0) await new Promise(res => setTimeout(res, 400));
+      }
+    }
+    if (ics !== null) {
+      if (env.DATA && Date.now() - icsSavedAt > ICS_SAVE_MS) {
+        icsSavedAt = Date.now();
+        await env.DATA.put('calendar:last', JSON.stringify({ updated: fetchedAt, ics }));
+      }
+    } else {
+      const last = env.DATA && await env.DATA.get('calendar:last', 'json');
+      if (!last || Date.now() - Date.parse(last.updated) > ICS_STALE_MS) return reply(502, { error: 'calendar unreachable' });
+      ics = last.ics; fetchedAt = last.updated; stale = true;
     }
 
     const events = expand(parseIcs(ics), todayW, todayW + days * DAY);
-    const body = { updated: new Date().toISOString(), from: dayKey, days, events };
+    const body = { updated: fetchedAt, from: dayKey, days, events };
+    if (stale) { body.stale = true; return reply(200, body); } // nicht zwischenspeichern, beim nächsten Mal wieder bei Google versuchen
     memo = { at: Date.now(), days, dayKey, body };
     return reply(200, body);
   },
