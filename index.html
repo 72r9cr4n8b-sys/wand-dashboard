@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-12T09:09:26">
+<meta name="build" content="2026-10-12T21:16:16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Zuhause">
-<meta name="theme-color" content="#0D1322">
+<meta name="theme-color" content="#0E1324">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* Layout: auf breiten Bildschirmen ein fester 1280×800-Rahmen, der skaliert wird;
    auf schmalen (html.compact, z. B. iPhone) fließen die Kacheln untereinander */
 :root{
-  --bg:#0D1322; --tile:#1A2238; --tile2:#232C47; --sky:#1D2B4A; --sky2:#26365A;
-  --fg:#F4F1EA; --muted:#9FB4DB; --soft:#C9D4EA;
+  --bg:#0E1324; --tile:#182039; --tile2:#222B4A; --sky:#182039; --sky2:#222B4A;
+  --fg:#F4F1EA; --muted:#93A3C6; --soft:#C2CCE4;
   --sun:#FFD27A; --orange:#F29E6B; --blue:#8DB8F2; --violet:#C3A6F2; --teal:#6FD3B8; --yellow:#F2C94C;
   --display:'Outfit', 'Helvetica Neue', sans-serif; --body:'Nunito Sans', 'Segoe UI', sans-serif;
   color-scheme: dark;
@@ -31,54 +31,99 @@ button{font-family:var(--body)}
 #stage{position:absolute;left:0;top:0;width:1280px;height:800px;transform-origin:0 0;padding:28px 32px 24px}
 .view{position:absolute;top:28px;left:32px;right:32px;bottom:24px;display:grid;grid-row-gap:18px}
 .view[hidden],[hidden]{display:none!important}
-#home{grid-template-rows:400px 1fr 62px}
+#home{grid-template-rows:252px minmax(0,1fr) 62px}
 .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-gap:18px;min-height:0}
 .span2{grid-column:span 2}
-.card{background:var(--tile);border-radius:28px;padding:22px 26px;min-height:0;overflow:hidden}
+.card{background:var(--tile);border-radius:24px;padding:22px 26px;min-height:0;overflow:hidden}
 .label{font-size:16px;font-weight:700;color:var(--muted)}
 .num{font-family:var(--display);font-variant-numeric:tabular-nums}
 
-/* Hero mit Himmel */
-#hero{position:relative;border-radius:28px;overflow:hidden;background:#22305A}
-#hero svg.skyart{position:absolute;left:0;top:0;width:100%;height:100%}
-#hero .content{position:relative;height:100%;padding:34px 40px;display:flex;flex-direction:column;justify-content:space-between}
-#greet{font-size:22px;font-weight:600;color:#E6E1F2}
-#clock{font-family:var(--display);font-size:150px;font-weight:300;line-height:.95;letter-spacing:-3px;color:#fff}
-#date{font-family:var(--display);font-size:28px;color:#fff}
-.pills{display:flex;flex-wrap:wrap;row-gap:8px}
-.pill{background:var(--bg);border-radius:999px;padding:10px 18px;font-size:17px;font-weight:600;margin-right:12px;color:#fff}
+/* Kopfbereich: Farbverlauf nach Tageszeit und Wetter (Farben setzt paintSky) */
+#hero{--g1:#C07AC9;--g2:#6A4BA8;--g3:#22244F;position:relative;border-radius:28px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-column-gap:36px;align-items:center;padding:28px 36px;background:linear-gradient(150deg,var(--g1),var(--g2) 55%,var(--g3));transition:background 1s}
+#hero .top{display:flex;align-items:center;font-size:17px;font-weight:700;opacity:.88}
+#hero .top .num{font-size:18px;font-weight:500}
+#hero .top .num:before{content:'·';margin:0 8px;opacity:.7}
+#greet{font-family:var(--display);font-weight:400;font-size:50px;line-height:1.05;letter-spacing:-.5px;margin:14px 0 12px;overflow-wrap:anywhere}
+.sunline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:16px;font-weight:600;opacity:.88}
+.sunline span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sunline svg{width:18px;height:18px;flex-shrink:0}
+.today{background:rgba(14,19,36,.5);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:4px 16px}
+.today .it{display:flex;align-items:center;gap:12px;width:100%;padding:11px 0;border:0;background:transparent;color:#fff;font-family:var(--body);font-size:16px;font-weight:700;text-align:left;cursor:default}
+.today .it[data-go]{cursor:pointer}
+.today .it+.it{border-top:1px solid rgba(255,255,255,.09)}
+.today .it svg{width:19px;height:19px;flex-shrink:0;opacity:.9}
+.today .it span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.today .it em{font-style:normal;margin-left:auto;padding-left:10px;font-weight:600;color:#C9D2E8;font-size:15px;white-space:nowrap}
+.today .it.hot em{color:#FFC9A8}
+
+/* Kacheln der Startseite: dunkle Karte, farbiges Symbol */
+.homegrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr);grid-gap:18px;min-height:0}
+#calCard{grid-row:1 / 3}
+.tile{background:var(--tile);border:0;border-radius:24px;padding:20px 22px;min-height:0;overflow:hidden;color:var(--fg);text-align:left;font-family:var(--body);width:100%;display:flex;flex-direction:column}
+button.tile,.tile[role="button"]{cursor:pointer}
+.th{display:flex;align-items:center;gap:14px;min-width:0}
+.ic{width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .3s}
+.ic svg{width:24px;height:24px}
+.tk{font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv{font-family:var(--display);font-size:32px;font-weight:500;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv small{display:block;font-family:var(--body);font-size:15px;font-weight:700;color:var(--soft);margin-top:4px;white-space:normal}
+#trash,#commuteTile,#indoor{justify-content:center}
+#trashWhat{white-space:normal;font-size:28px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ts{font-size:14px;font-weight:600;color:var(--muted);margin-top:10px;line-height:1.35}
+.label{font-size:16px;font-weight:700;color:var(--muted)}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
 
 /* Wetter */
-#wx{background:var(--sky);display:flex;flex-direction:column;justify-content:space-between}
-.wxtop{display:flex;justify-content:space-between;align-items:center}
-#wxTemp{font-size:68px;font-weight:300;line-height:1}
-#wxText{font-size:18px;color:var(--soft)}
+#wx .days{margin-top:auto}
 .days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-gap:8px}
-.day{background:var(--sky2);border-radius:14px;padding:8px 0;text-align:center}
-.day .d{font-size:14px;color:var(--muted)}
-.day .t{font-size:17px;font-weight:700}
-.day svg{width:26px;height:26px;display:block;margin:2px auto}
-
-#indoor{background:#1E3A3A;display:flex;align-items:center;padding:18px 24px}
-#indoor .txt{margin-left:18px}
+.day{background:rgba(255,255,255,.05);border-radius:14px;padding:6px 0;text-align:center}
+.day .d{font-size:13px;font-weight:700;color:var(--muted)}
+.day .t{font-size:16px;font-weight:700}
+.day svg{width:24px;height:24px;display:block;margin:2px auto}
+#wxIcon{background:rgba(255,210,122,.14)}
+#wxIcon svg{width:30px;height:30px}
 
 .col{display:grid;grid-row-gap:18px;min-height:0}
-.evt{display:flex;align-items:center;background:var(--tile2);border-radius:16px;padding:12px 18px;margin-top:10px}
-.evt .bar{width:10px;height:36px;border-radius:6px;margin-right:16px}
-#trash{background:var(--tile2);color:var(--fg);display:flex;align-items:center;padding:16px 22px;border:0;width:100%;text-align:left;cursor:pointer;border-radius:28px;font-family:var(--body)}
 .bins{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:18px;min-height:0}
-.bin{border-radius:28px;padding:22px 26px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.bin{border-radius:24px;padding:22px 26px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .bin .nm{font-family:var(--display);font-size:32px;margin-bottom:6px}
 .bin .ln{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:600;padding:8px 0;border-top:1px solid rgba(255,255,255,.18)}
 .bin .ln.dark{border-top-color:rgba(0,0,0,.18)}
 .bin .ln small{font-size:16px;font-weight:700;opacity:.8}
-#commuteTile{background:#1F3326;display:flex;align-items:center;padding:16px 22px;border:0;color:var(--fg);text-align:left;cursor:pointer;width:100%;border-radius:28px}
+
+/* Termine */
+.cardhead{display:flex;justify-content:space-between;align-items:center}
+.evt{display:flex;align-items:center;padding:12px 0;border-top:1px solid rgba(255,255,255,.07)}
+#calHome{margin-top:8px}
+#calHome .evt:first-child{border-top:0}
+.evt .bar{width:4px;height:30px;border-radius:4px;margin-right:14px;flex-shrink:0}
+
+/* Müll und Arbeitsweg */
+#trash .ic{background:var(--binbg,#3B4566);color:var(--binfg,#F4F1EA)}
+#commuteTile .ic{color:#14221A}
+#commuteTile.lvl-ok .ic{background:#8ED39A}
+#commuteTile.lvl-mid .ic{background:var(--yellow)}
+#commuteTile.lvl-bad .ic{background:#FF9A7A}
+#commuteTile.lvl-none .ic{background:var(--tile2);color:var(--muted)}
+#commuteTile.lvl-bad .tv small{color:#FFB39C}
 .round{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:16px}
+
+/* Sanftes Einblenden und Rückmeldung beim Antippen */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#home.intro #hero,#home.intro .tile{animation:rise .55s both}
+#home.intro .homegrid > :nth-child(1){animation-delay:.06s}
+#home.intro .homegrid > :nth-child(2){animation-delay:.12s}
+#home.intro .homegrid > :nth-child(3){animation-delay:.18s}
+#home.intro .homegrid > :nth-child(4){animation-delay:.24s}
+#home.intro .homegrid > :nth-child(5){animation-delay:.3s}
+.tile,nav button,.today .it,.back{transition:transform .15s ease}
+button.tile:active,.tile[role="button"]:active,nav button:active,.today .it[data-go]:active,.back:active{transform:scale(.97)}
 
 /* Navigation */
 nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-gap:12px}
 nav button{background:var(--tile);border:0;border-radius:999px;height:62px;display:flex;align-items:center;padding:0 10px;font-size:18px;font-weight:700;color:var(--fg);cursor:pointer}
-nav button .round{width:44px;height:44px;margin-right:12px}
+nav button .round{width:42px;height:42px;margin-right:12px;border-radius:14px}
+nav button .round svg{width:21px;height:21px}
 button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 
 /* Unterseiten */
@@ -122,8 +167,8 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .list{font-size:17px}
 .list .line{display:flex;justify-content:space-between;background:var(--tile2);border-radius:14px;padding:10px 14px;margin-top:8px}
 .ghost{background:var(--tile2);border:0;color:var(--fg);border-radius:999px;padding:10px 16px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
-.evt .tm{width:104px;flex-shrink:0;font-size:18px;font-weight:700;color:var(--soft)}
-.evt .tt{font-size:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.evt .tm{width:100px;flex-shrink:0;font-size:17px;font-weight:700;color:var(--muted)}
+.evt .tt{font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
 .evt .tag{font-size:14px;font-weight:700;color:var(--muted);margin-left:12px;flex-shrink:0}
 .cardhead{display:flex;justify-content:space-between;align-items:center}
 .gear{background:var(--tile2);border:0;border-radius:999px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:-8px -8px 0 0}
@@ -158,7 +203,7 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .chips{display:flex;flex-wrap:wrap;align-content:flex-start;margin:-4px}
 .chips button{background:var(--tile2);border:0;border-radius:999px;padding:10px 16px;margin:4px;font-size:17px;font-weight:600;color:var(--fg);cursor:pointer;font-family:var(--body)}
 .chips button:before{content:'+ ';color:#8ED39A;font-weight:700}
-.badge{background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
+.badge{white-space:nowrap;background:#8ED39A;color:#0E2A14;border-radius:999px;font-size:14px;font-weight:700;padding:2px 9px;margin-left:8px}
 .soon{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 /* Wetter-Detailseite */
 #wx{cursor:pointer}
@@ -207,12 +252,6 @@ html.compact #taskNew{display:block}
 .quick button[aria-pressed="true"]{background:var(--blue);color:#0D1F3A}
 
 /* Arbeitsweg */
-#commuteTile .round{transition:background .3s}
-#commuteTile.lvl-ok{background:#1F3326}#commuteTile.lvl-ok .round{background:#8ED39A}
-#commuteTile.lvl-mid{background:#40301A}#commuteTile.lvl-mid .round{background:var(--yellow)}
-#commuteTile.lvl-bad{background:#4A2020}#commuteTile.lvl-bad .round{background:#FF9A7A}
-#commuteTile.lvl-none{background:var(--tile2)}#commuteTile.lvl-none .round{background:var(--muted)}
-#commuteBig small{font-family:var(--body);font-size:16px;font-weight:700;color:var(--soft);margin-left:8px}
 .pill.alert{background:var(--orange);color:#2A1608;cursor:pointer}
 
 /* Essensideen */
@@ -282,29 +321,43 @@ html.compact .row{grid-template-columns:minmax(0,1fr)!important;grid-gap:14px}
 html.compact .span2{grid-column:auto}
 html.compact .col{grid-template-rows:none!important;grid-row-gap:14px}
 html.compact .card{padding:18px;border-radius:24px}
-html.compact #hero{height:250px;border-radius:24px}
-html.compact #hero .content{padding:22px}
-html.compact #greet{font-size:18px}
-html.compact #clock{font-size:84px;letter-spacing:-2px}
-html.compact #date{font-size:21px}
-html.compact .pill{font-size:13px;padding:7px 11px;margin-right:8px;white-space:nowrap}
-html.compact #wx{min-height:230px}
-html.compact .evt{padding:10px 14px}
-html.compact .evt .tm{width:86px;font-size:16px}
-html.compact .evt .tt{font-size:18px}
-/* Startseite auf dem Handy: Kacheln in sinnvoller Reihenfolge (Arbeitsweg direkt unter der Uhr) */
-html.compact #home .row,html.compact #home .col{display:contents}
-html.compact #hero{order:1}
-html.compact #commuteTile{order:2}
-html.compact #wx{order:3}
-html.compact #calCard{order:4}
-html.compact #trash{order:5}
-html.compact #indoor{order:6}
-html.compact #trash,html.compact #commuteTile{min-height:84px;border-radius:24px}
+html.compact #hero{display:block;margin:calc(-12px - env(safe-area-inset-top)) -16px 0;border-radius:0;padding:calc(env(safe-area-inset-top) + 18px) 16px 4px;
+  background:linear-gradient(to bottom,rgba(14,19,36,0) 55%,var(--bg) 100%),linear-gradient(150deg,var(--g1),var(--g2) 55%,var(--g3))}
+html.compact #hero .top{justify-content:space-between;font-size:15px}
+html.compact #hero .top .num{font-size:16px}
+html.compact #hero .top .num:before{content:none}
+html.compact #greet{font-size:36px;margin:18px 0 10px}
+html.compact .sunline{font-size:14px;gap:6px 14px;margin-bottom:18px}
+html.compact .sunline svg{width:16px;height:16px}
+html.compact .today{padding:2px 14px}
+html.compact .today .it{font-size:15px;padding:10px 0}
+html.compact .today .it em{font-size:14px}
+html.compact .homegrid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:none;grid-gap:12px}
+html.compact #calCard{grid-row:auto;grid-column:1 / -1;order:1}
+html.compact #trash{order:2}
+html.compact #commuteTile{order:3}
+html.compact .tile{padding:15px 16px;border-radius:22px}
+html.compact .th{gap:11px}
+html.compact .ic{width:38px;height:38px;border-radius:12px}
+html.compact .ic svg{width:20px;height:20px}
+html.compact #wxIcon svg{width:26px;height:26px}
+html.compact .tk{font-size:13px}
+html.compact .tv{font-size:24px}
+html.compact .tv small{margin-top:2px;font-size:13px}
+html.compact #trashWhat{font-size:21px}
+html.compact .ts{font-size:13px;margin-top:8px}
+html.compact #wx .days{display:none}
+html.compact .homegrid > .tile:not(#calCard) .th{flex-direction:column;align-items:flex-start;gap:10px}
+html.compact .homegrid > .tile:not(#calCard) .tk{white-space:normal}
+html.compact #trash,html.compact #commuteTile,html.compact #indoor{justify-content:flex-start}
+html.compact #calHome{margin-top:4px}
+html.compact .evt{padding:10px 0}
+html.compact .evt .tm{width:80px;font-size:15px}
+html.compact .evt .tt{font-size:16px}
 html.compact nav{position:fixed;left:0;right:0;bottom:0;z-index:10;grid-gap:0;padding:6px 4px calc(6px + env(safe-area-inset-bottom));background:rgba(13,19,34,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--tile2)}
 html.compact nav button{position:relative;flex-direction:column;justify-content:center;height:58px;padding:0;background:transparent;font-size:11px;font-weight:700;border-radius:14px}
-html.compact nav button .round{width:34px;height:34px;margin:0 0 3px}
-html.compact nav button .round svg{width:19px;height:19px}
+html.compact nav button .round{width:32px;height:32px;margin:0 0 3px;border-radius:11px}
+html.compact nav button .round svg{width:18px;height:18px}
 html.compact nav button[aria-current="page"]{background:var(--tile)}
 #notesBadge::after{content:' neu'}
 html.compact #notesBadge::after{content:''}
@@ -345,90 +398,51 @@ html.compact .subhead .seg{order:2;width:100%}
 <div id="stage">
 
 <!-- ===== Startbildschirm ===== -->
-<section id="home" class="view" aria-label="Startbildschirm">
-  <div class="row">
-    <div id="hero" class="span2">
-      <svg class="skyart" viewBox="0 0 820 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <defs>
-          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop id="s1" offset="0" stop-color="#1E2A55"></stop>
-            <stop id="s2" offset="0.55" stop-color="#5B4F86"></stop>
-            <stop id="s3" offset="1" stop-color="#F29E6B"></stop>
-          </linearGradient>
-          <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0" stop-color="#FFD27A" stop-opacity="0.55"></stop>
-            <stop offset="1" stop-color="#FFD27A" stop-opacity="0"></stop>
-          </radialGradient>
-        </defs>
-        <rect width="820" height="400" fill="url(#skyGrad)"></rect>
-        <g id="stars" fill="#FFFFFF" opacity="0.7">
-          <circle cx="120" cy="40" r="1.4"></circle><circle cx="300" cy="70" r="1.1"></circle><circle cx="420" cy="30" r="1.3"></circle><circle cx="760" cy="50" r="1.2"></circle><circle cx="650" cy="90" r="1"></circle><circle cx="220" cy="120" r="1"></circle><circle cx="540" cy="60" r="1.2"></circle>
-        </g>
-        <g id="orb">
-          <circle id="orbGlow" cx="640" cy="300" r="170" fill="url(#glow)"></circle>
-          <circle id="orbBody" cx="640" cy="300" r="58" fill="#FFD27A"></circle>
-        </g>
-        <g fill="#FFFFFF" opacity="0.18">
-          <ellipse cx="520" cy="150" rx="90" ry="18"></ellipse><ellipse cx="575" cy="135" rx="55" ry="16"></ellipse><ellipse cx="730" cy="210" rx="70" ry="12"></ellipse>
-        </g>
-        <path id="hill1" d="M0 330 C 140 280 260 300 380 320 S 640 290 820 310 V400 H0Z" fill="#3A3566"></path>
-        <path id="hill2" d="M0 360 C 180 330 330 350 470 365 S 700 340 820 355 V400 H0Z" fill="#232447"></path>
-      </svg>
-      <div class="content">
-        <div>
-          <div id="greet">Hallo</div>
-          <div id="clock" class="num">--:--</div>
-          <div id="date">&nbsp;</div>
-        </div>
-        <div class="pills">
-          <div class="pill">Sonnenaufgang <span id="sunrise" class="num">--:--</span></div>
-          <div class="pill">Untergang <span id="sunset" class="num">--:--</span></div>
-          <div class="pill alert" id="meterPill" data-go="verbrauch" role="button" tabindex="0" hidden>Zähler ablesen</div>
-        </div>
+<section id="home" class="view intro" aria-label="Startbildschirm">
+  <div id="hero">
+    <div>
+      <div class="top"><span id="date">&nbsp;</span><span id="clock" class="num">--:--</span></div>
+      <div id="greet">Hallo</div>
+      <div class="sunline">
+        <span aria-label="Sonnenaufgang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M5.6 8.6 7 10M18.4 8.6 17 10M3 17h18M8 17a4 4 0 0 1 8 0M10 5l2-2 2 2"></path></svg><span id="sunrise" class="num">--:--</span></span>
+        <span aria-label="Sonnenuntergang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M5.6 8.6 7 10M18.4 8.6 17 10M3 17h18M8 17a4 4 0 0 1 8 0M10 5l2 2 2-2"></path></svg><span id="sunset" class="num">--:--</span></span>
       </div>
     </div>
-
-    <div class="col" style="grid-template-rows:1fr auto">
-      <div id="wx" class="card" data-go="wetter" role="button" tabindex="0" aria-label="Ausführliches Wetter öffnen">
-        <div class="wxtop">
-          <div>
-            <div class="label">Lehrte<span class="more">›</span></div>
-            <div id="wxTemp" class="num">--°</div>
-            <div id="wxText">Wetter wird geladen …</div>
-          </div>
-          <div id="wxIcon" style="width:84px;height:84px"></div>
-        </div>
-        <div id="days" class="days"></div>
-      </div>
-      <div id="indoor" class="card">
-        <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="31" fill="none" stroke="#2D5552" stroke-width="8"></circle><circle id="humRing" cx="38" cy="38" r="31" fill="none" stroke="#6FD3B8" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 195" transform="rotate(-90 38 38)"></circle><text id="humText" x="38" y="44" text-anchor="middle" font-family="Outfit, sans-serif" font-size="17" fill="#F4F1EA">–</text></svg>
-        <div class="txt">
-          <div class="label" style="color:#8FD9C3">Innen</div>
-          <div id="inTemp" class="num" style="font-size:44px;line-height:1.05">--°</div>
-          <div id="inState" style="font-size:15px;color:#BFD9D2">wird geladen …</div>
-        </div>
-      </div>
-    </div>
+    <div id="today" class="today" aria-label="Heute"></div>
   </div>
 
-  <div class="row">
-    <div class="card span2" id="calCard">
+  <div class="homegrid">
+    <div class="tile" id="calCard">
       <div class="cardhead">
-        <div class="label" style="color:#C3B2F0">Heute &amp; morgen <span id="calMore"></span></div>
+        <div class="th"><span class="ic" style="background:rgba(195,166,242,.16);color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span>
+          <div><div class="tv" style="font-size:22px">Termine</div><div class="tk">Heute &amp; morgen <span id="calMore"></span></div></div></div>
         <button class="gear" type="button" data-go="einstellungen" aria-label="Einstellungen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9D4EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
       </div>
       <div id="calHome"><div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt">Kalender wird geladen …</div></div></div>
     </div>
-    <div class="col" style="grid-template-rows:1fr 1fr">
-      <button id="trash" type="button" data-go="muell">
-        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:16px;flex-shrink:0"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg>
-        <span style="min-width:0"><span id="trashWhen" style="display:block;font-size:15px;font-weight:700">Müllabfuhr</span><span id="trashWhat" style="display:block;font-family:var(--display);font-size:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">wird geladen …</span></span>
-      </button>
-      <button id="commuteTile" class="lvl-none" type="button" aria-label="Arbeitsweg in Google Maps öffnen">
-        <span class="round"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14221A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17l1.5-6h9L18 17M7.5 11l1-3.5h7l1 3.5"></path><circle cx="8" cy="17.5" r="1.6"></circle><circle cx="16" cy="17.5" r="1.6"></circle></svg></span>
-        <span style="min-width:0"><span id="commuteSmall" style="display:block;font-size:15px;font-weight:700;color:var(--soft)">Zur Arbeit</span><span id="commuteBig" style="display:block;font-family:var(--display);font-size:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">wird geladen …</span></span>
-      </button>
+
+    <div id="wx" class="tile" data-go="wetter" role="button" tabindex="0" aria-label="Ausführliches Wetter öffnen">
+      <div class="th"><span class="ic" id="wxIcon"></span>
+        <div style="min-width:0"><div class="tk">Wetter · <span id="wxText">wird geladen …</span></div><div id="wxTemp" class="tv num">--°</div></div></div>
+      <div class="ts" id="wxRange">&nbsp;</div>
+      <div id="days" class="days"></div>
     </div>
+
+    <div id="indoor" class="tile">
+      <div class="th"><span class="ic" style="background:rgba(111,211,184,.16);color:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7M5 10v10h14V10"></path><path d="M12 12v4"></path><circle cx="12" cy="17" r="1.6"></circle></svg></span>
+        <div style="min-width:0"><div class="tk">Drinnen</div><div id="inTemp" class="tv num">--°</div></div></div>
+      <div class="ts"><span id="inHum"></span><span id="inState">wird geladen …</span></div>
+    </div>
+
+    <button id="trash" class="tile" type="button" data-go="muell">
+      <span class="th"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"></path></svg></span>
+        <span style="min-width:0"><span id="trashWhen" class="tk" style="display:block">Müllabfuhr</span><span id="trashWhat" class="tv" style="display:block">wird geladen …</span></span></span>
+    </button>
+
+    <button id="commuteTile" class="tile lvl-none" type="button" aria-label="Arbeitsweg in Google Maps öffnen">
+      <span class="th"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17l1.5-6h9L18 17M7.5 11l1-3.5h7l1 3.5"></path><circle cx="8" cy="17.5" r="1.6"></circle><circle cx="16" cy="17.5" r="1.6"></circle></svg></span>
+        <span style="min-width:0"><span id="commuteSmall" class="tk" style="display:block">Zur Arbeit</span><span id="commuteBig" class="tv" style="display:block">wird geladen …</span></span></span>
+    </button>
   </div>
 
   <nav aria-label="Bereiche">
@@ -712,6 +726,10 @@ html.compact .subhead .seg{order:2;width:100%}
       <button id="delKey" class="btn alt" type="button">Schlüssel entfernen</button>
     </div>
     <div id="setMsg" role="status"></div>
+    <div style="font-family:var(--display);font-size:22px;margin-top:22px">Begrüßung</div>
+    <p style="font-size:16px">Dein Vorname für „Guten Morgen, …“. Er wird nur auf diesem Gerät gespeichert.</p>
+    <div class="shopadd" style="margin:12px 0 0"><input id="inName" type="text" maxlength="30" autocomplete="given-name" placeholder="Vorname" aria-label="Vorname für die Begrüßung" style="margin-top:0"><button id="saveName" type="button">Speichern</button></div>
+    <div id="nameMsg" role="status" style="font-size:15px;font-weight:700;min-height:20px;margin-top:8px"></div>
     <div style="font-family:var(--display);font-size:22px;margin-top:22px">Arbeitsweg</div>
     <p id="commuteFound" style="font-size:16px">Noch keine Daten.</p>
   </div>
@@ -813,7 +831,9 @@ html.compact .subhead .seg{order:2;width:100%}
   function fit(){
     // matchMedia statt innerWidth: Mobile Browser melden sonst die Breite der (noch) überstehenden 1280er-Fläche
     var compact = window.matchMedia('(max-width: ' + (COMPACT_BELOW - 1) + 'px)').matches, st = $('stage'), nav = document.querySelector('nav');
+    var was = document.documentElement.classList.contains('compact');
     document.documentElement.classList.toggle('compact', compact);
+    if (was !== compact && typeof renderToday === 'function'){ renderToday(); if (calData) renderCalendar(); }
     // Auf schmalen Bildschirmen wird die Navigation zur festen Leiste unten (auch auf Unterseiten sichtbar)
     var navHome = compact ? document.body : $('home');
     if (nav.parentNode !== navHome) navHome.appendChild(nav);
@@ -863,24 +883,26 @@ html.compact .subhead .seg{order:2;width:100%}
     if (t) show(t.getAttribute('data-go'), t.getAttribute('data-name'));
   });
   $('wx').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show('wetter'); } });
-  $('meterPill').addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show('verbrauch'); } });
 
   /* ---------- Uhr, Datum, Himmel ---------- */
   var DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
   var DAYS_SHORT = ['So','Mo','Di','Mi','Do','Fr','Sa'];
   var MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
   var MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  // Farbverlauf im Kopfbereich je nach Tageszeit; bei Regen oder grauem Himmel gedämpfter
   var SKIES = {
-    night:   ['#0B1230','#1A2150','#2E2C5E', '#E8E6F5', '#1E1D45', '#121331', 0.9],
-    morning: ['#1E2A55','#5B4F86','#F29E6B', '#FFD27A', '#3A3566', '#232447', 0.5],
-    day:     ['#2F6DB5','#5E97D6','#A9CBEA', '#FFE29A', '#3F6B5A', '#2C4E42', 0],
-    evening: ['#2A1F4F','#8A4F7D','#F2895C', '#FFB86B', '#3A2D55', '#221C3D', 0.3]
+    night:   ['#2A3A72','#1A2350','#0E1428'],
+    morning: ['#F6B37E','#E07A8A','#4A4C8C'],
+    day:     ['#7FB6F0','#4C82D6','#2C4E9A'],
+    evening: ['#C07AC9','#6A4BA8','#22244F'],
+    grey:    ['#7D8BA3','#4E5B74','#273246']
   };
-  var sunTimes = null;
+  var sunTimes = null, wxGrey = false;
   function skyPhase(now){
     var h = now.getHours() + now.getMinutes() / 60;
     var rise = sunTimes ? sunTimes.rise : 7, set = sunTimes ? sunTimes.set : 19;
     if (h < rise - 0.5 || h > set + 0.75) return 'night';
+    if (wxGrey) return 'grey';
     if (h < rise + 1.5) return 'morning';
     if (h > set - 1.5) return 'evening';
     return 'day';
@@ -888,26 +910,23 @@ html.compact .subhead .seg{order:2;width:100%}
   var lastPhase = '';
   function paintSky(phase){
     if (phase === lastPhase) return; lastPhase = phase;
-    var c = SKIES[phase];
-    $('s1').setAttribute('stop-color', c[0]); $('s2').setAttribute('stop-color', c[1]); $('s3').setAttribute('stop-color', c[2]);
-    $('orbBody').setAttribute('fill', c[3]);
-    $('orbBody').setAttribute('r', phase === 'night' ? 34 : 58);
-    $('orbBody').setAttribute('cy', phase === 'day' ? 150 : (phase === 'night' ? 110 : 300));
-    $('orbGlow').setAttribute('cy', phase === 'day' ? 150 : (phase === 'night' ? 110 : 300));
-    $('orbGlow').setAttribute('opacity', phase === 'night' ? 0.3 : 1);
-    $('hill1').setAttribute('fill', c[4]); $('hill2').setAttribute('fill', c[5]);
-    $('stars').setAttribute('opacity', c[6]);
+    var c = SKIES[phase], hero = $('hero');
+    hero.style.setProperty('--g1', c[0]); hero.style.setProperty('--g2', c[1]); hero.style.setProperty('--g3', c[2]);
   }
+  var NAME_KEY = 'wanddash.name.v1';
+  function getName(){ try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
   function tick(){
     var now = new Date(), h = now.getHours();
     $('clock').textContent = pad(h) + ':' + pad(now.getMinutes());
     $('date').textContent = DAYS[now.getDay()] + ', ' + now.getDate() + '. ' + MONTHS[now.getMonth()];
-    $('greet').textContent = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Guten Tag' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
+    var name = getName();
+    $('greet').textContent = (h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Guten Tag' : h < 22 ? 'Guten Abend' : 'Gute Nacht') + (name ? ', ' + name : '');
     paintSky(skyPhase(now));
     meterHint(now);
     if (calDay !== dayKey(now)){ renderCalendar(); if (typeof renderTasks === 'function') renderTasks(); }
     if (trashHour !== dayKey(now) + now.getHours()) renderTrash();
   }
+  var meterDue = false;
   // Hinweis „Zähler ablesen“: ab 2 Tage vor dem Ablesetag bis zum 5., solange in dem Zeitraum noch nichts eingetragen ist
   function meterHint(now){
     var due = new Date(now.getFullYear(), now.getMonth() + (now.getDate() > 5 ? 1 : 0), METER_DAY);
@@ -917,7 +936,7 @@ html.compact .subhead .seg{order:2;width:100%}
       var fromKey = dayKey(from);
       if (meter.readings.some(function(r){ return r.date >= fromKey; })) show = false;
     }
-    $('meterPill').hidden = !show;
+    if (meterDue !== show){ meterDue = show; renderToday(); }
   }
   setInterval(tick, 1000 * 10); tick();
 
@@ -959,7 +978,9 @@ html.compact .subhead .seg{order:2;width:100%}
       wxData = d; wxData.loaded = new Date();
       var cur = d.current, w = wmo(cur.weather_code, cur.is_day === 1);
       $('wxTemp').textContent = Math.round(cur.temperature_2m) + '°';
-      $('wxText').textContent = w[1] + ' · ' + Math.round(d.daily.temperature_2m_min[0]) + '° / ' + Math.round(d.daily.temperature_2m_max[0]) + '°';
+      $('wxText').textContent = w[1];
+      $('wxRange').textContent = 'max. ' + Math.round(d.daily.temperature_2m_max[0]) + '° · min. ' + Math.round(d.daily.temperature_2m_min[0]) + '°';
+      wxGrey = cur.weather_code === 3 || cur.weather_code >= 45;
       $('wxIcon').innerHTML = ICON[w[0]];
       $('sunrise').textContent = hm(d.daily.sunrise[0]);
       $('sunset').textContent = hm(d.daily.sunset[0]);
@@ -1315,16 +1336,18 @@ html.compact .subhead .seg{order:2;width:100%}
       if (!list.length){
         home.innerHTML = '<div class="evt"><div class="bar" style="background:var(--violet)"></div><div class="tt" style="color:var(--soft)">Heute und morgen keine Termine</div></div>';
       } else {
-        home.innerHTML = list.slice(0, 3).map(function(x){
+        var maxRows = document.documentElement.classList.contains('compact') ? 3 : 5;
+        home.innerHTML = list.slice(0, maxRows).map(function(x){
           if (x.b) return '<div class="evt"><div class="bar" style="background:#F4A7B9"></div><div class="tm num">' + esc(bdWhen(x.b)) +
             '</div><div class="tt">' + esc(bdText(x.b)) + '</div></div>';
           return '<div class="evt"><div class="bar" style="background:' + (x.tag ? 'var(--orange)' : 'var(--violet)') + '"></div><div class="tm num">' + esc(timeLabel(x.e, x.k)) +
             '</div><div class="tt">' + esc(x.e.title) + '</div>' + (x.tag ? '<div class="tag">' + x.tag + '</div>' : '') + '</div>';
         }).join('');
-        if (list.length > 3) more.textContent = '· ' + (list.length - 3) + ' weitere';
+        if (list.length > maxRows) more.textContent = '· ' + (list.length - maxRows) + ' weitere';
       }
       if (calError === 'net') more.textContent = '· nicht aktuell';
     }
+    renderToday();
     // Wochenansicht
     var html = '';
     for (var i = 0; i < 7; i++){
@@ -1350,6 +1373,7 @@ html.compact .subhead .seg{order:2;width:100%}
   }
   function openSettings(){
     $('inKey').value = ''; $('setMsg').textContent = '';
+    $('inName').value = getName(); $('nameMsg').textContent = '';
     confirmKeyDel = false; $('delKey').textContent = 'Schlüssel entfernen';
     openSettingsState();
   }
@@ -1388,7 +1412,7 @@ html.compact .subhead .seg{order:2;width:100%}
     Papier:             { name: 'Papier',      bg: '#3A6BB0', fg: '#F2F7FF' },
     Leichtverpackungen: { name: 'Gelbe Tonne', bg: '#F2C94C', fg: '#2A2208', dark: true }
   };
-  var trashData = null, trashError = '', trashHour = '';
+  var trashData = null, trashError = '', trashHour = '', trashSoon = null;
   try { trashData = JSON.parse(localStorage.getItem(TRASH_KEY) || 'null'); } catch (e) { trashData = null; }
   function binInfo(type){ return BINS[type] || { name: type, bg: '#3B4566', fg: '#F4F1EA' }; }
   function parseDay(k){ var p = k.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
@@ -1423,7 +1447,7 @@ html.compact .subhead .seg{order:2;width:100%}
     });
   }
   function setTile(bg, fg, when, what){
-    var t = $('trash'); t.style.background = bg; t.style.color = fg;
+    var t = $('trash'); t.style.setProperty('--binbg', bg); t.style.setProperty('--binfg', fg);
     $('trashWhen').textContent = when; $('trashWhat').textContent = what;
   }
   function renderTrash(){
@@ -1436,13 +1460,16 @@ html.compact .subhead .seg{order:2;width:100%}
       var msg = trashError === 'nokey' ? 'Noch nicht verbunden' : trashError === 'auth' ? 'Schlüssel stimmt nicht' :
         trashError === 'setup' ? 'Adresse fehlt noch' : trashError === 'address' ? 'Adresse nicht gefunden' :
         trashError === 'net' ? 'Nicht erreichbar' : trashData ? 'Keine Termine' : 'wird geladen …';
-      setTile('var(--tile2)', 'var(--fg)', 'Müllabfuhr', msg);
+      trashSoon = null;
+      setTile('#3B4566', 'var(--fg)', 'Müllabfuhr', msg);
     } else {
       var due = bins.filter(function(b){ return b.dates[0] === next; });
       var first = binInfo(due[0].type), n = daysUntil(next, now);
+      trashSoon = n <= 1 ? { n: n, what: due.map(function(b){ return binInfo(b.type).name; }).join(' + ') } : null;
       setTile(first.bg, first.fg, n === 1 ? 'Morgen rausstellen' : n === 0 ? 'Heute Abholung' : whenLabel(next, now) + ' · in ' + n + ' Tagen',
         due.map(function(b){ return binInfo(b.type).name; }).join(' + '));
     }
+    renderToday();
     // Detailansicht
     $('binGrid').innerHTML = !bins.length ? '<div class="bin" style="background:var(--tile)"><div class="nm">' + esc($('trashWhat').textContent) + '</div>' +
       '<div class="ln"><span>' + (trashError === 'address' ? 'Bitte die hinterlegte Adresse prüfen.' : trashError === 'setup' ? 'Die Adresse muss noch beim Vermittler hinterlegt werden.' : 'Die Termine erscheinen, sobald die Verbindung steht.') + '</span></div></div>' : bins.map(function(b){
@@ -1461,8 +1488,7 @@ html.compact .subhead .seg{order:2;width:100%}
   /* ---------- Innenklima (Govee H5179, über den Vermittler) ---------- */
   function showClimate(t, h, state){
     $('inTemp').textContent = t == null ? '--°' : fmt(t, 1) + '°';
-    $('humText').textContent = h == null ? '–' : h + '%';
-    $('humRing').setAttribute('stroke-dasharray', (h == null ? 0 : Math.round(h / 100 * 195)) + ' 195');
+    $('inHum').textContent = h == null ? '' : 'Luftfeuchte ' + h + ' % · ';
     $('inState').textContent = state;
   }
   var CLIMATE_CACHE = 'wanddash.climate.v1';
@@ -1487,7 +1513,7 @@ html.compact .subhead .seg{order:2;width:100%}
           try { localStorage.setItem(CLIMATE_CACHE, JSON.stringify(d)); } catch (e) {}
         }
         if (d.stale){ showLastClimate(d.reason === 'offline' ? 'Thermometer ohne WLAN' : 'Govee gerade nicht erreichbar'); return; }
-        var h = d.humidity, air = h == null ? '' : h < 40 ? 'Luft trocken' : h > 60 ? 'Luft feucht' : 'Luft angenehm';
+        var h = d.humidity, air = h == null ? '' : h < 40 ? 'trocken' : h > 60 ? 'feucht' : 'angenehm';
         showClimate(d.temperature, h, d.online ? (air ? air + ' · ' : '') + hhmm(d.updated) : 'Thermometer offline · ' + hhmm(d.updated));
         return;
       }
@@ -1634,6 +1660,7 @@ html.compact .subhead .seg{order:2;width:100%}
   function renderTasks(){
     var x = taskGroups(), g = x.g, urgent = g.late.length + g.today.length;
     $('taskBadge').hidden = !urgent; $('taskBadge').textContent = urgent || '';
+    renderToday();
     var open = g.late.length + g.today.length + g.week.length + g.later.length + g.someday.length;
     $('taskState').textContent = tasksData ? open + ' offen' + (urgent ? ' · ' + urgent + ' fällig' : '') :
       tasksError === 'nokey' ? 'Nicht verbunden' : tasksError === 'auth' ? 'Schlüssel falsch' : tasksError ? 'Nicht erreichbar' : 'Wird geladen …';
@@ -1731,7 +1758,7 @@ html.compact .subhead .seg{order:2;width:100%}
   /* ---------- Arbeitsweg (TomTom über den Vermittler) ---------- */
   var commuteData = null;
   function setCommute(level, small, bigHtml){
-    $('commuteTile').className = 'lvl-' + level;
+    $('commuteTile').className = 'tile lvl-' + level;
     $('commuteSmall').textContent = small;
     $('commuteBig').innerHTML = bigHtml;
   }
@@ -1756,6 +1783,7 @@ html.compact .subhead .seg{order:2;width:100%}
       $('commuteFound').innerHTML = d.fromFound ? 'Start: <b>' + esc(d.fromFound) + '</b><br>Ziel: <b>' + esc(d.toFound) + '</b><br>' + fmt(d.km, 1) + ' km · ' + d.minutes + ' Min. mit Verkehr' : '';
       var extra = d.delay <= 1 ? 'freie Fahrt' : d.delay + ' Min. Verzögerung';
       setCommute(level, small, d.minutes + ' Min.<small>' + esc(extra) + '</small>');
+      renderToday();
     }).catch(function(){ if (!commuteData) setCommute('none', 'Zur Arbeit', 'Keine Verbindung'); });
   }
   $('commuteTile').addEventListener('click', function(){
@@ -2158,6 +2186,58 @@ html.compact .subhead .seg{order:2;width:100%}
     tick(); loadWeather(); fetchCalendar(); fetchTrash(); fetchClimate(); fetchShop(); fetchNotes(); fetchBirthdays(); fetchCommute(); fetchTasks();
     if (!$('verbrauch').hidden) fetchMeter();
   });
+
+  /* ---------- „Heute“ im Kopfbereich: das Wichtigste des Tages in wenigen Zeilen ---------- */
+  var TODAY_ICON = {
+    cal: '<path d="M3 10h18M8 3v4M16 3v4"></path><rect x="3" y="5" width="18" height="16" rx="3"></rect>',
+    bin: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path>',
+    task: '<rect x="3" y="3" width="18" height="18" rx="5"></rect><path d="m8 12 3 3 5-6"></path>',
+    car: '<path d="M5 17h14M6 17l1.5-6h9L18 17M7.5 11l1-3.5h7l1 3.5"></path><circle cx="8" cy="17.5" r="1.6"></circle><circle cx="16" cy="17.5" r="1.6"></circle>',
+    gift: '<rect x="3" y="9" width="18" height="12" rx="2"></rect><path d="M12 9v12M3 13h18M12 9C10 4 6 5 7.5 7.5 8.5 9 12 9 12 9zm0 0c2-5 6-4 4.5-1.5C15.5 9 12 9 12 9z"></path>',
+    meter: '<path d="M5 20V11M12 20V5M19 20v-7"></path>',
+    key: '<circle cx="8" cy="15" r="4"></circle><path d="m11 12 9-9M17 6l3 3"></path>'
+  };
+  var todayReady = false;
+  function renderToday(){
+    if (!todayReady) return;
+    var now = new Date(), today = dayKey(now), hm = pad(now.getHours()) + ':' + pad(now.getMinutes()), items = [];
+    // [Symbol, Text, Zusatz, Ziel-Bereich, hervorheben]
+    if (meterDue) items.push(['meter', 'Zähler ablesen', 'Strom & Gas', 'verbrauch', true]);
+    if (bdData) upcomingBirthdays(0).forEach(function(b){ items.push(['gift', b.p.name + ' hat Geburtstag', b.age ? b.age + ' Jahre' : '', 'kalender', true]); });
+    if (calData){
+      var evs = eventsOn(today), next = evs.filter(function(e){ return !e.allDay && e.start === today && e.startTime >= hm; })
+        .sort(function(a, b){ return a.startTime < b.startTime ? -1 : 1; })[0];
+      items.push(['cal', !evs.length ? 'Heute keine Termine' : evs.length === 1 ? '1 Termin heute' : evs.length + ' Termine heute',
+        next ? 'nächster ' + next.startTime : evs.length && evs.every(function(e){ return e.allDay; }) ? 'ganztägig' : '', 'kalender']);
+    }
+    if (trashSoon) items.push(['bin', trashSoon.what + (trashSoon.n === 1 ? ' rausstellen' : ' wird abgeholt'), trashSoon.n === 1 ? 'morgen' : 'heute', 'muell', trashSoon.n === 1 && now.getHours() >= 17]);
+    if (tasksData){
+      var g = taskGroups().g, due = g.late.concat(g.today), imp = due.filter(function(t){ return t.important; }).length;
+      if (due.length) items.push(['task', due.length === 1 ? '1 Aufgabe fällig' : due.length + ' Aufgaben fällig',
+        g.late.length ? g.late.length + ' überfällig' : imp ? imp + ' wichtig' : '', 'aufgaben', g.late.length > 0]);
+    }
+    if (commuteData) items.push(['car', commuteData.minutes + ' Min. zur Arbeit', commuteData.delay <= 1 ? 'freie Fahrt' : '+' + commuteData.delay + ' Min.', '', commuteData.delay > 10]);
+    if (!items.length) items.push(getKey() ? ['cal', 'Daten werden geladen …', '', ''] : ['key', 'Noch nicht verbunden', 'Einrichten', 'einstellungen', true]);
+    var max = document.documentElement.classList.contains('compact') ? 5 : 4;
+    $('today').innerHTML = items.slice(0, max).map(function(x){
+      return (x[3] ? '<button type="button" class="it' + (x[4] ? ' hot' : '') + '" data-go="' + x[3] + '">' : '<div class="it' + (x[4] ? ' hot' : '') + '">') +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + TODAY_ICON[x[0]] + '</svg>' +
+        '<span>' + esc(x[1]) + '</span>' + (x[2] ? '<em>' + esc(x[2]) + '</em>' : '') + (x[3] ? '</button>' : '</div>');
+    }).join('');
+  }
+  todayReady = true; renderToday();
+  setInterval(renderToday, 60 * 1000);
+  // Einblenden nur beim ersten Öffnen, nicht bei jeder Rückkehr zur Startseite
+  setTimeout(function(){ $('home').classList.remove('intro'); }, 1200);
+
+  /* ---------- Name für die Begrüßung (nur auf diesem Gerät) ---------- */
+  $('saveName').addEventListener('click', function(){
+    var n = $('inName').value.trim().slice(0, 30);
+    try { if (n) localStorage.setItem(NAME_KEY, n); else localStorage.removeItem(NAME_KEY); } catch (e) {}
+    $('nameMsg').textContent = n ? 'Gespeichert. Hallo ' + n + '!' : 'Name entfernt.';
+    tick();
+  });
+  $('inName').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); $('saveName').click(); } });
 
   /* ---------- Neue Version automatisch laden ---------- */
   // Jede veröffentlichte Version trägt eine Kennung (meta "build", wird beim Commit gesetzt).
