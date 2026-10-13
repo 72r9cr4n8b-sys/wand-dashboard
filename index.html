@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-13T22:26:21">
+<meta name="build" content="2026-10-13T22:41:51">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -159,7 +159,9 @@ button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 #verbrauch .list .line{padding:8px 12px;margin-top:6px}
 #verbrauch .ghost{margin-top:8px;padding:8px 14px}
 #verbrauch form.entry{padding:18px 22px}
-.setgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:18px;align-items:start;min-height:0}
+.setgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:18px;align-items:start;min-height:0;overflow-y:auto}
+#pushPanel .tog .bx{border-color:#8ED39A}
+#pushPanel .tog[aria-pressed="true"] .bx{background:#8ED39A}
 .tform label{display:block;font-size:15px;font-weight:700;color:var(--muted);margin-top:12px}
 .tform .settings-in, .tform input{width:100%;height:50px;border-radius:14px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:20px;padding:0 14px;font-family:var(--display);margin-top:6px}
 .tform .pair{display:grid;grid-template-columns:1fr 1fr;grid-gap:12px}
@@ -759,6 +761,24 @@ html.compact .subhead .seg{order:2;width:100%}
     <div style="font-family:var(--display);font-size:22px;margin-top:22px">Arbeitsweg</div>
     <p id="commuteFound" style="font-size:16px">Noch keine Daten.</p>
   </div>
+  <div class="col" style="align-content:start">
+  <div class="card settings" id="pushCard" style="max-width:none">
+    <div style="font-family:var(--display);font-size:28px">Erinnerungen</div>
+    <p id="pushInfo" style="font-size:16px">Mitteilungen auf dieses Gerät: Müll am Vorabend, Geburtstage, fällige Aufgaben und Zählerablesung.</p>
+    <div id="pushOff" class="btnrow"><button id="pushOn" class="btn main" type="button" style="background:#8ED39A;color:#0E2A14">Erinnerungen einschalten</button></div>
+    <div id="pushPanel" hidden>
+      <button type="button" class="tog" data-push="muell" aria-pressed="false"><span class="bx"></span>Müll rausstellen (am Vorabend)</button>
+      <button type="button" class="tog" data-push="geburtstag" aria-pressed="false"><span class="bx"></span>Geburtstage (am Tag und 3 Tage vorher)</button>
+      <button type="button" class="tog" data-push="aufgaben" aria-pressed="false"><span class="bx"></span>Fällige Aufgaben</button>
+      <button type="button" class="tog" data-push="zaehler" aria-pressed="false"><span class="bx"></span>Zähler ablesen (am 1.)</button>
+      <div class="tform pair">
+        <label for="pushMorning">Morgens um<select id="pushMorning"></select></label>
+        <label for="pushEvening">Müll abends um<select id="pushEvening"></select></label>
+      </div>
+      <div class="btnrow" style="flex-wrap:wrap"><button id="pushTest" class="btn alt" type="button" style="margin-bottom:8px">Test senden</button><button id="pushDisable" class="btn alt" type="button" style="margin-bottom:8px">Ausschalten</button></div>
+    </div>
+    <div id="pushMsg" role="status" style="font-size:16px;font-weight:700;min-height:22px;margin-top:10px"></div>
+  </div>
   <form id="tariffForm" class="card tform" novalidate>
     <div style="font-family:var(--display);font-size:28px">Tarif</div>
     <div class="seg" role="group" aria-label="Tarif für">
@@ -777,6 +797,7 @@ html.compact .subhead .seg{order:2;width:100%}
     <div class="btnrow"><button class="btn main" type="submit">Tarif speichern</button></div>
     <div id="tariffMsg" role="status" style="font-size:17px;font-weight:700;min-height:24px;margin-top:12px"></div>
   </form>
+  </div>
   </div>
 </section>
 
@@ -846,6 +867,7 @@ html.compact .subhead .seg{order:2;width:100%}
   var MEALS_URL = API + '/meals';
   var COMMUTE_URL = API + '/commute';
   var TASKS_URL = API + '/tasks';
+  var PUSH_URL = API + '/push';
   var TASKS_CACHE = 'wanddash.tasks.v1';
   var COMMUTE_MS = 5 * 60 * 1000;     // Fahrzeit alle 5 Minuten
   var MEALS_CACHE = 'wanddash.meals.v1';
@@ -911,7 +933,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
     if (id !== 'einkauf' && typeof closeCat === 'function'){ closeCat(); if (shopEdit){ shopEdit = false; renderShop(); } }
-    if (id === 'einstellungen'){ openSettings(); fillTariff(); }
+    if (id === 'einstellungen'){ openSettings(); fillTariff(); refreshPush(); }
     if (id === 'pinnwand'){ markNotesSeen(); fetchNotes(); }
     closeNote();
   }
@@ -2370,6 +2392,119 @@ html.compact .subhead .seg{order:2;width:100%}
     tick();
   });
   $('inName').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); $('saveName').click(); } });
+
+  /* ---------- Erinnerungen als Mitteilung (über den Vermittler) ---------- */
+  // Auf iPhone/iPad nur in der App vom Home-Bildschirm möglich (iOS 16.4+), am Mac in Safari.
+  var pushReg = null, pushSub = null, pushPrefs = null, pushBusy = false, pushRegFailed = false;
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  function pushSupported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+  function deviceLabel(){ return /iPhone/.test(navigator.userAgent) ? 'iPhone' : isIOS ? 'iPad' : /Mac/.test(navigator.userAgent) ? 'Mac' : 'Gerät'; }
+  function b64uBytes(str){
+    var b = atob(str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((str.length + 3) % 4)), out = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
+    return out;
+  }
+  function pushReq(method, body){
+    var key = getKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    var opt = { method: method, headers: { 'Authorization': 'Bearer ' + key }, cache: 'no-store' };
+    if (body){ opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+    return fetch(PUSH_URL, opt).then(function(r){
+      if (r.status === 401) throw new Error('auth');
+      if (!r.ok) throw new Error('net');
+      return r.json();
+    });
+  }
+  function pushSay(t){ $('pushMsg').textContent = t; }
+  function pushFail(e){
+    var m = e && e.message;
+    pushSay(m === 'denied' ? 'Mitteilungen sind für „Zuhause“ nicht erlaubt. Das lässt sich in den Einstellungen des Geräts unter „Mitteilungen“ ändern.' :
+      m === 'nokey' ? 'Bitte zuerst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Der Zugangsschlüssel stimmt nicht.' : 'Das hat gerade nicht geklappt. Bitte später nochmal versuchen.');
+  }
+  function hourOptions(sel, from, to){
+    var h = '';
+    for (var i = from; i <= to; i++) h += '<option value="' + i + '">' + pad(i) + ':00 Uhr</option>';
+    sel.innerHTML = h;
+  }
+  hourOptions($('pushMorning'), 4, 11); hourOptions($('pushEvening'), 15, 22);
+  function renderPush(){
+    if (!pushSupported() || pushRegFailed){
+      $('pushOff').hidden = true; $('pushPanel').hidden = true;
+      $('pushInfo').textContent = pushRegFailed ? 'Mitteilungen ließen sich in diesem Browser nicht einrichten.' : isIOS && !standalone ? 'Auf iPhone und iPad gehen Erinnerungen nur in der App vom Home-Bildschirm. Öffne „Zuhause“ dort und schalte sie hier ein.' :
+        'Dieser Browser kann leider keine Mitteilungen anzeigen.';
+      return;
+    }
+    var on = !!(pushSub && pushPrefs);
+    $('pushOff').hidden = on; $('pushPanel').hidden = !on;
+    if (!on) return;
+    [].forEach.call(document.querySelectorAll('[data-push]'), function(b){ b.setAttribute('aria-pressed', pushPrefs[b.getAttribute('data-push')] ? 'true' : 'false'); });
+    $('pushMorning').value = String(pushPrefs.morning); $('pushEvening').value = String(pushPrefs.evening);
+  }
+  function refreshPush(){
+    pushSay('');
+    if (!pushSupported() || !pushSub || !getKey()){ renderPush(); return; }
+    pushReq('POST', { op: 'status', endpoint: pushSub.endpoint }).then(function(d){ pushPrefs = d.subscribed ? d.prefs : null; renderPush(); }).catch(function(){ renderPush(); });
+  }
+  if (pushSupported()){
+    navigator.serviceWorker.register('sw.js').then(function(reg){ pushReg = reg; return reg.pushManager.getSubscription(); })
+      .then(function(s){ pushSub = s; refreshPush(); }).catch(function(){ pushRegFailed = true; renderPush(); });
+    // Antippen einer Mitteilung: passenden Bereich öffnen
+    navigator.serviceWorker.addEventListener('message', function(e){
+      var v = e.data && e.data.go;
+      if (v && VIEWS.indexOf(v) >= 0 && v !== 'soon') show(v);
+    });
+  } else renderPush();
+  $('pushOn').addEventListener('click', function(){
+    if (!getKey()){ pushFail(new Error('nokey')); return; }
+    pushSay('Einen Moment …');
+    // Die Erlaubnis muss direkt beim Antippen erfragt werden (sonst lehnt iOS ab)
+    Notification.requestPermission().then(function(p){
+      if (p !== 'granted') throw new Error('denied');
+      return Promise.all([navigator.serviceWorker.ready, pushReq('GET')]);
+    }).then(function(x){
+      var reg = x[0]; pushReg = reg;
+      return reg.pushManager.getSubscription().then(function(old){ return old ? old.unsubscribe() : null; }).then(function(){
+        return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(x[1].key) });
+      });
+    }).then(function(s){
+      pushSub = s;
+      return pushReq('POST', { op: 'subscribe', sub: s.toJSON(), label: deviceLabel() });
+    }).then(function(d){
+      pushPrefs = d.prefs; renderPush();
+      pushSay('Erinnerungen sind an. Mit „Test senden“ kannst du es ausprobieren.');
+    }).catch(pushFail);
+  });
+  function setPushPrefs(p){
+    if (!pushSub || pushBusy) return;
+    pushBusy = true;
+    pushReq('POST', { op: 'prefs', endpoint: pushSub.endpoint, prefs: p }).then(function(d){
+      pushPrefs = d.subscribed ? d.prefs : null; renderPush(); pushSay('Gespeichert.');
+    }).catch(pushFail).then(function(){ pushBusy = false; });
+  }
+  $('pushPanel').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-push]') : null;
+    if (!b || !pushPrefs) return;
+    var p = {}; p[b.getAttribute('data-push')] = !pushPrefs[b.getAttribute('data-push')];
+    setPushPrefs(p);
+  });
+  $('pushMorning').addEventListener('change', function(){ setPushPrefs({ morning: parseInt(this.value, 10) }); });
+  $('pushEvening').addEventListener('change', function(){ setPushPrefs({ evening: parseInt(this.value, 10) }); });
+  $('pushTest').addEventListener('click', function(){
+    if (!pushSub) return;
+    pushSay('Wird gesendet …');
+    pushReq('POST', { op: 'test', endpoint: pushSub.endpoint }).then(function(d){
+      if (!d.subscribed){ pushPrefs = null; renderPush(); pushSay('Dieses Gerät war nicht mehr angemeldet. Bitte Erinnerungen neu einschalten.'); return; }
+      pushSay(d.status >= 200 && d.status < 300 ? 'Verschickt – die Mitteilung sollte gleich erscheinen.' : 'Verschicken hat nicht geklappt (Code ' + d.status + ').');
+    }).catch(pushFail);
+  });
+  $('pushDisable').addEventListener('click', function(){
+    if (!pushSub) return;
+    var s = pushSub;
+    pushReq('POST', { op: 'unsubscribe', endpoint: s.endpoint }).catch(function(){}).then(function(){ return s.unsubscribe(); }).catch(function(){}).then(function(){
+      pushSub = null; pushPrefs = null; renderPush(); pushSay('Erinnerungen sind aus.');
+    });
+  });
 
   /* ---------- Neue Version automatisch laden ---------- */
   // Jede veröffentlichte Version trägt eine Kennung (meta "build", wird beim Commit gesetzt).

@@ -27,6 +27,9 @@
  * POST /tasks  {op:"add"|"edit",id?,text,due,important,repeat} | {op:"done",id} | {op:"undo",id} | {op:"remove",id} | {op:"clearDone"}
  * GET /meals → Essensideen (beim ersten Abruf mit einer Startsammlung gefüllt)
  * POST /meals  {op:"add"|"edit",id?,name,ingredients,quick,veggie,season} | {op:"remove",id} | {op:"cooked",id}
+ * GET /push → öffentlicher Schlüssel für Mitteilungen
+ * POST /push  {op:"subscribe",sub,label,prefs} | {op:"prefs",endpoint,prefs} | {op:"status",endpoint} | {op:"test",endpoint} | {op:"unsubscribe",endpoint}
+ * Zeitplan (stündlich): Erinnerungen an Müll, Geburtstage, fällige Aufgaben und Zählerablesung als Mitteilung aufs Handy.
  */
 
 const ALLOWED_ORIGIN = 'https://72r9cr4n8b-sys.github.io';
@@ -50,6 +53,9 @@ let climateMemo = null; // { at, body }
 let goveeDevice = null; // { sku, device } – Gerät merken, spart eine Abfrage
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runReminders(env));
+  },
   async fetch(request, env) {
     const cors = {
       'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -67,8 +73,8 @@ export default {
     const url = new URL(request.url);
     const listName = (/^\/list\/([a-z]+)$/.exec(url.pathname) || [])[1];
     if (listName && !LISTS.includes(listName)) return reply(404, { error: 'not found' });
-    const writable = listName || ['/meter', '/notes', '/birthdays', '/meals', '/tasks'].includes(url.pathname);
-    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals', '/commute', '/tasks'].includes(url.pathname)) return reply(404, { error: 'not found' });
+    const writable = listName || ['/meter', '/notes', '/birthdays', '/meals', '/tasks', '/push'].includes(url.pathname);
+    if (!listName && !['/calendar', '/trash', '/climate', '/meter', '/notes', '/birthdays', '/meals', '/commute', '/tasks', '/push'].includes(url.pathname)) return reply(404, { error: 'not found' });
     if (request.method !== 'GET' && !(writable && request.method === 'POST')) return reply(405, { error: 'method' });
 
     if (!env.ACCESS_KEY) return reply(500, { error: 'not configured' });
@@ -83,6 +89,7 @@ export default {
     if (url.pathname === '/meals') return meals(request, env, reply);
     if (url.pathname === '/commute') return commute(env, reply);
     if (url.pathname === '/tasks') return tasks(request, env, reply);
+    if (url.pathname === '/push') return push(request, env, reply);
     if (url.pathname === '/trash') return trash(env, reply);
     if (url.pathname === '/climate') return climate(env, reply);
     if (!env.ICAL_URL) return reply(500, { error: 'not configured' });
@@ -885,4 +892,211 @@ async function tasks(request, env, reply) {
   data.updated = now;
   await env.DATA.put('tasks', JSON.stringify(data));
   return reply(200, data);
+}
+
+/* ---------- Erinnerungen als Mitteilung (Web Push, RFC 8030/8291/8292) ---------- */
+// Das Schlüsselpaar für die Absenderkennung (VAPID) erzeugt der Vermittler selbst und hält es im KV.
+const PUSH_SUBJECT = 'https://72r9cr4n8b-sys.github.io/wand-dashboard/';
+const PUSH_HOSTS = /^(web\.push\.apple\.com|fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9.-]+\.notify\.windows\.com)$/;
+const MAX_SUBS = 20;
+const PUSH_KINDS = ['muell', 'geburtstag', 'aufgaben', 'zaehler'];
+const PUSH_DEFAULTS = { muell: true, geburtstag: true, aufgaben: true, zaehler: true, morning: 7, evening: 18 };
+const BIN_NAMES = { Restabfall: 'Restmüll', Bioabfall: 'Biotonne', Papier: 'Papier', Leichtverpackungen: 'Gelbe Tonne' };
+
+const b64u = {
+  enc: buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: str => Uint8Array.from(atob(str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((str.length + 3) % 4)), c => c.charCodeAt(0)),
+};
+const concat = (...parts) => {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let i = 0; for (const p of parts) { out.set(p, i); i += p.length; }
+  return out;
+};
+
+async function vapidKeys(env) {
+  let v = await env.DATA.get('push:vapid', 'json');
+  if (!v) {
+    const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+    v = { pub: b64u.enc(await crypto.subtle.exportKey('raw', kp.publicKey)), jwk: await crypto.subtle.exportKey('jwk', kp.privateKey) };
+    await env.DATA.put('push:vapid', JSON.stringify(v));
+  }
+  return v;
+}
+async function vapidHeader(v, endpoint) {
+  const enc = new TextEncoder();
+  const head = b64u.enc(enc.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
+  const claims = b64u.enc(enc.encode(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: PUSH_SUBJECT })));
+  const key = await crypto.subtle.importKey('jwk', v.jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, enc.encode(head + '.' + claims));
+  return 'vapid t=' + head + '.' + claims + '.' + b64u.enc(sig) + ', k=' + v.pub;
+}
+async function hkdf(salt, ikm, info, len) {
+  const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, len * 8));
+}
+// Inhalt für genau dieses Gerät verschlüsseln (aes128gcm)
+async function encryptPush(sub, text) {
+  const enc = new TextEncoder();
+  const uaPub = b64u.dec(sub.keys.p256dh), authSecret = b64u.dec(sub.keys.auth);
+  const local = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', local.publicKey));
+  const uaKey = await crypto.subtle.importKey('raw', uaPub, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, local.privateKey, 256));
+  const ikm = await hkdf(authSecret, shared, concat(enc.encode('WebPush: info\0'), uaPub, asPub), 32);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(salt, ikm, enc.encode('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(salt, ikm, enc.encode('Content-Encoding: nonce\0'), 12);
+  const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, concat(enc.encode(text), new Uint8Array([2]))));
+  const head = new Uint8Array(21);
+  head.set(salt, 0); new DataView(head.buffer).setUint32(16, 4096); head[20] = asPub.length;
+  return concat(head, asPub, ct);
+}
+async function sendPush(v, sub, msg) {
+  try {
+    const r = await fetch(sub.endpoint, {
+      method: 'POST',
+      headers: { Authorization: await vapidHeader(v, sub.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '43200', Urgency: 'normal' },
+      body: await encryptPush(sub, JSON.stringify(msg)),
+    });
+    return r.status;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function cleanPrefs(p, base) {
+  const out = Object.assign({}, PUSH_DEFAULTS, base || {});
+  if (p && typeof p === 'object') {
+    PUSH_KINDS.forEach(k => { if (typeof p[k] === 'boolean') out[k] = p[k]; });
+    if (Number.isInteger(p.morning) && p.morning >= 4 && p.morning <= 11) out.morning = p.morning;
+    if (Number.isInteger(p.evening) && p.evening >= 15 && p.evening <= 22) out.evening = p.evening;
+  }
+  return out;
+}
+function validSub(sub) {
+  try {
+    const u = new URL(sub.endpoint);
+    return u.protocol === 'https:' && PUSH_HOSTS.test(u.hostname) && sub.endpoint.length < 1000 &&
+      typeof sub.keys.p256dh === 'string' && b64u.dec(sub.keys.p256dh).length === 65 &&
+      typeof sub.keys.auth === 'string' && b64u.dec(sub.keys.auth).length === 16;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function push(request, env, reply) {
+  if (!env.DATA) return reply(500, { error: 'not configured' });
+  const v = await vapidKeys(env);
+  if (request.method === 'GET') return reply(200, { key: v.pub });
+  let body;
+  try { body = await readBody(request, 4000); } catch (e) { return reply(400, { error: 'bad request' }); }
+  const data = (await env.DATA.get('push:subs', 'json')) || { subs: [] };
+  const endpoint = body.op === 'subscribe' ? body.sub && body.sub.endpoint : body.endpoint;
+  const i = data.subs.findIndex(x => x.endpoint === endpoint);
+  const save = () => env.DATA.put('push:subs', JSON.stringify(data));
+
+  if (body.op === 'subscribe') {
+    const sub = body.sub && { endpoint: body.sub.endpoint, keys: body.sub.keys || {} };
+    if (!sub || !validSub(sub)) return reply(400, { error: 'bad subscription' });
+    const entry = { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+      label: String(body.label || 'Gerät').slice(0, 30), prefs: cleanPrefs(body.prefs, i >= 0 ? data.subs[i].prefs : null), added: new Date().toISOString() };
+    if (i >= 0) data.subs[i] = entry;
+    else { if (data.subs.length >= MAX_SUBS) data.subs.shift(); data.subs.push(entry); }
+    await save();
+    return reply(200, { subscribed: true, prefs: entry.prefs });
+  }
+  if (i < 0) return reply(200, { subscribed: false });
+  if (body.op === 'status') return reply(200, { subscribed: true, prefs: data.subs[i].prefs });
+  if (body.op === 'prefs') {
+    data.subs[i].prefs = cleanPrefs(body.prefs, data.subs[i].prefs);
+    await save();
+    return reply(200, { subscribed: true, prefs: data.subs[i].prefs });
+  }
+  if (body.op === 'unsubscribe') {
+    data.subs.splice(i, 1);
+    await save();
+    return reply(200, { subscribed: false });
+  }
+  if (body.op === 'test') {
+    const status = await sendPush(v, data.subs[i], { title: 'Zuhause', body: 'So sehen deine Erinnerungen aus. 👋', tag: 'test', url: './#einstellungen' });
+    if (status === 404 || status === 410) { data.subs.splice(i, 1); await save(); return reply(200, { subscribed: false, status }); }
+    return reply(200, { subscribed: true, prefs: data.subs[i].prefs, status });
+  }
+  return reply(400, { error: 'unknown op' });
+}
+
+// Was steht heute an? Liefert Mitteilungen je Art.
+async function morningMessages(env, todayW) {
+  const today = fmtDate(todayW), out = [];
+  const t = new Date(todayW), y = t.getUTCFullYear();
+  // Geburtstage heute und in 3 Tagen
+  const bd = (await env.DATA.get('birthdays', 'json')) || { people: [] };
+  const on = (p, w) => {
+    const d = new Date(w), leap = new Date(Date.UTC(d.getUTCFullYear(), 1, 29)).getUTCMonth() === 1;
+    const day = p.month === 2 && p.day === 29 && !leap ? 28 : p.day;
+    return p.month === d.getUTCMonth() + 1 && day === d.getUTCDate();
+  };
+  const age = (p, w) => p.year ? ' (' + (new Date(w).getUTCFullYear() - p.year) + ')' : '';
+  const todayB = bd.people.filter(p => on(p, todayW)), soonB = bd.people.filter(p => on(p, todayW + 3 * DAY));
+  if (todayB.length || soonB.length) {
+    const lines = todayB.map(p => p.name + ' hat heute Geburtstag' + age(p, todayW))
+      .concat(soonB.map(p => 'In 3 Tagen: ' + p.name + age(p, todayW + 3 * DAY)));
+    out.push({ kind: 'geburtstag', title: todayB.length ? '🎂 Geburtstag' : '🎁 Geburtstag bald', body: lines.join('\n'), tag: 'geb-' + today, url: './#kalender' });
+  }
+  // Fällige und überfällige Aufgaben
+  const td = (await env.DATA.get('tasks', 'json')) || { tasks: [] };
+  const due = td.tasks.filter(x => !x.done && x.due && x.due <= today)
+    .sort((a, b) => (b.important - a.important) || (a.due < b.due ? -1 : 1));
+  if (due.length) {
+    const late = due.filter(x => x.due < today).length;
+    out.push({ kind: 'aufgaben', title: (due.length === 1 ? '1 Aufgabe' : due.length + ' Aufgaben') + ' fällig' + (late ? ' · ' + late + ' überfällig' : ''),
+      body: due.slice(0, 3).map(x => (x.important ? '❗ ' : '• ') + x.text).join('\n') + (due.length > 3 ? '\n… und ' + (due.length - 3) + ' weitere' : ''), tag: 'aufg-' + today, url: './#aufgaben' });
+  }
+  // Ablesetag (1.), am 3. noch einmal, falls nichts eingetragen wurde
+  const dom = t.getUTCDate();
+  if (dom === 1 || dom === 3) {
+    const m = (await env.DATA.get('meter', 'json')) || { readings: [] };
+    const from = fmtDate(Date.UTC(y, t.getUTCMonth(), 1) - 2 * DAY);
+    if (!m.readings.some(r => r.date >= from))
+      out.push({ kind: 'zaehler', title: '📊 Zähler ablesen', body: dom === 1 ? 'Heute ist Ablesetag für Strom und Gas.' : 'Die Zählerstände für diesen Monat fehlen noch.', tag: 'zaehler-' + today, url: './#verbrauch' });
+  }
+  return out;
+}
+async function eveningMessages(env, todayW) {
+  const res = await trash(env, (status, data) => ({ status, data }));
+  if (res.status !== 200) return [];
+  const tomorrow = fmtDate(todayW + DAY);
+  const names = res.data.bins.filter(b => b.dates.includes(tomorrow)).map(b => BIN_NAMES[b.type] || b.type);
+  if (!names.length) return [];
+  return [{ kind: 'muell', title: '🗑️ Morgen ist Müllabfuhr', body: names.join(' + ') + ' heute Abend rausstellen', tag: 'muell-' + tomorrow, url: './#muell' }];
+}
+async function runReminders(env) {
+  if (!env.DATA) return;
+  const data = await env.DATA.get('push:subs', 'json');
+  if (!data || !data.subs.length) return;
+  const nowW = utcToWall(Date.now(), TZ), hour = new Date(nowW).getUTCHours(), todayW = startOfDayW(nowW);
+  // Jede Stunde nur einmal, auch falls der Zeitplan doppelt auslöst
+  const runKey = fmtDate(todayW) + 'T' + hour;
+  if ((await env.DATA.get('push:lastrun')) === runKey) return;
+  await env.DATA.put('push:lastrun', runKey);
+
+  const wantMorning = data.subs.some(x => x.prefs.morning === hour), wantEvening = data.subs.some(x => x.prefs.evening === hour);
+  if (!wantMorning && !wantEvening) return;
+  const morning = wantMorning ? await morningMessages(env, todayW) : [];
+  const evening = wantEvening ? await eveningMessages(env, todayW) : [];
+  if (!morning.length && !evening.length) return;
+
+  const v = await vapidKeys(env), gone = [];
+  for (const sub of data.subs) {
+    const msgs = (sub.prefs.morning === hour ? morning : []).concat(sub.prefs.evening === hour ? evening : []).filter(m => sub.prefs[m.kind]);
+    for (const m of msgs) {
+      const status = await sendPush(v, sub, { title: m.title, body: m.body, tag: m.tag, url: m.url });
+      if (status === 404 || status === 410) { gone.push(sub.endpoint); break; }
+    }
+  }
+  if (gone.length) {
+    data.subs = data.subs.filter(x => !gone.includes(x.endpoint));
+    await env.DATA.put('push:subs', JSON.stringify(data));
+  }
 }

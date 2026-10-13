@@ -7,3 +7,7 @@ workers_dev = true
 [[kv_namespaces]]
 binding = "DATA"
 id = "ec7915fd0fb24ba3a05b8577cd01bd44"
+
+# Stündlich prüfen, ob Erinnerungen fällig sind (Uhrzeit in UTC, Auswertung in Berliner Zeit)
+[triggers]
+crons = ["2 * * * *"]
