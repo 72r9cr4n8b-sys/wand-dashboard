@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-12T21:41:43">
+<meta name="build" content="2026-10-13T22:26:21">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -203,7 +203,22 @@ form.entry .primary{margin-top:auto;height:58px;border:0;border-radius:999px;bac
 .shopadd{display:flex;margin-bottom:14px}
 .shopadd input{flex:1;min-width:0;height:60px;border-radius:18px;border:2px solid var(--tile2);background:var(--bg);color:var(--fg);font-size:22px;padding:0 18px;font-family:var(--body)}
 .shopadd button{height:60px;border:0;border-radius:999px;padding:0 26px;margin-left:12px;font-size:19px;font-weight:700;background:#8ED39A;color:#0E2A14;cursor:pointer}
-.shoplist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:10px;align-content:start;overflow:hidden}
+.shoplist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:10px;align-content:start;overflow-y:auto;min-height:0;flex:1}
+.shophead{grid-column:1 / -1;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+.shophead:first-child{margin-top:0}
+.shophead .dot{width:10px;height:10px;border-radius:4px;background:var(--c)}
+.shophead .linkbtn{margin-left:auto;text-transform:none;letter-spacing:0;font-size:14px;padding:2px 4px;color:#8ED39A}
+.shoptools{display:flex;justify-content:space-between;align-items:center;min-height:30px;margin:-4px 0 6px}
+.shoptools .hint{font-size:14px;font-weight:700;color:var(--yellow)}
+.shoplist.editing .item{outline:2px dashed rgba(242,201,76,.5);outline-offset:-2px}
+.item .sec{margin-left:auto;padding-left:8px;font-size:12px;font-weight:800;color:var(--muted);flex-shrink:0}
+#catSheet{position:fixed;inset:0;z-index:50;background:rgba(5,8,16,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+#catSheet[hidden]{display:none}
+#catSheet .sheet{background:var(--tile);color:var(--fg)}
+.catgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-gap:8px;margin-top:14px}
+.catgrid button{display:flex;align-items:center;gap:10px;background:var(--tile2);border:0;border-radius:14px;padding:12px 14px;color:var(--fg);font-size:16px;font-weight:700;text-align:left;cursor:pointer;font-family:var(--body)}
+.catgrid button .dot{width:12px;height:12px;border-radius:4px;background:var(--c);flex-shrink:0}
+.catgrid button[aria-pressed="true"]{outline:2px solid #8ED39A}
 .item{display:flex;align-items:center;background:var(--tile2);border:0;border-radius:16px;padding:0 16px;height:58px;font-size:20px;font-weight:600;color:var(--fg);text-align:left;cursor:pointer;font-family:var(--body);min-width:0}
 .item .box{width:28px;height:28px;border-radius:9px;border:3px solid #8ED39A;margin-right:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -694,6 +709,7 @@ html.compact .subhead .seg{order:2;width:100%}
         <input id="shopIn" type="text" maxlength="80" placeholder="Was fehlt?" aria-label="Neuer Eintrag" enterkeyhint="done">
         <button type="submit">Hinzufügen</button>
       </form>
+      <div class="shoptools"><span class="hint" id="shopHint"></span><button type="button" class="linkbtn" id="shopEdit">Abschnitte ändern</button></div>
       <div id="shopList" class="shoplist"></div>
     </div>
     <div class="col" style="grid-template-rows:1fr auto">
@@ -779,6 +795,13 @@ html.compact .subhead .seg{order:2;width:100%}
 </div>
 
 <!-- Zettel bearbeiten (außerhalb der skalierten Fläche, damit er immer gut lesbar ist) -->
+<div id="catSheet" hidden role="dialog" aria-modal="true" aria-labelledby="catTitle">
+  <div class="sheet">
+    <div id="catTitle" style="font-family:var(--display);font-size:22px">Abschnitt wählen</div>
+    <div id="catGrid" class="catgrid"></div>
+    <div class="sheetbtns"><button type="button" id="catCancel" style="background:var(--tile2)">Abbrechen</button></div>
+  </div>
+</div>
 <div id="noteSheet" hidden>
   <form id="noteForm" class="sheet c-gelb" role="dialog" aria-modal="true" aria-labelledby="noteTitle" novalidate>
     <div id="noteTitle" style="font-family:var(--display);font-size:24px;margin-bottom:12px">Neuer Zettel</div>
@@ -887,6 +910,7 @@ html.compact .subhead .seg{order:2;width:100%}
     if (id === 'essen'){ if (!ideaId) pickIdea(); renderMeals(); fetchMeals(); }
     if (id === 'muell') renderTrash();
     if (id === 'einkauf') fetchShop();
+    if (id !== 'einkauf' && typeof closeCat === 'function'){ closeCat(); if (shopEdit){ shopEdit = false; renderShop(); } }
     if (id === 'einstellungen'){ openSettings(); fillTariff(); }
     if (id === 'pinnwand'){ markNotesSeen(); fetchNotes(); }
     closeNote();
@@ -1553,7 +1577,51 @@ html.compact .subhead .seg{order:2;width:100%}
   fetchClimate(); setInterval(fetchClimate, CLIMATE_MS);
 
   /* ---------- Einkaufsliste (gemeinsamer Speicher beim Vermittler) ---------- */
-  var shop = null, shopAt = 0, shopBusy = false;
+  var shop = null, shopAt = 0, shopBusy = false, shopEdit = false, catFor = null;
+  // Abschnitte in der Reihenfolge eines typischen Supermarkts. Erkennung über Wortteile;
+  // der längste passende Wortteil gewinnt („Kokosmilch“ → Vorrat statt Kühlregal). „=“ = nur ganzes Wort.
+  var SECTIONS = [
+    { id: 'obst', name: 'Obst & Gemüse', c: '#8ED39A', k: 'obst gemüse apfel äpfel banane birne orange mandarine clementine zitrone limette traube erdbeer himbeer heidelbeer blaubeer johannisbeer preiselbeer beeren kirsche pfirsich nektarine aprikose pflaume zwetschge kiwi mango ananas melone avocado granatapfel feige rhabarber salat gurke tomate paprika zucchini aubergine karotte möhre kartoffel süßkartoffel zwiebel schalotte knoblauch lauch porree sellerie brokkoli blumenkohl kohl wirsing kohlrabi spinat rucola feldsalat champignon pilze radieschen rettich kürbis ingwer petersilie schnittlauch basilikum dill koriander minze kräuter fenchel spargel rote bete pastinake chili rosenkohl' },
+    { id: 'brot', name: 'Brot & Backwaren', c: '#E8B26A', k: 'brot brötchen semmel toast baguette croissant laugen brezel breze bagel ciabatta wraps tortilla kuchen knäckebrot fladenbrot berliner' },
+    { id: 'kuehl', name: 'Kühlregal', c: '#9EC5F2', k: 'milch joghurt jogurt quark sahne schmand crème fraîche creme fraiche butter margarine käse kaese mozzarella feta gouda parmesan emmentaler frischkäse hüttenkäse =ei eier kefir skyr pudding tofu hummus gnocchi tortellini maultaschen frische nudeln buttermilch' },
+    { id: 'fleisch', name: 'Fleisch, Wurst & Fisch', c: '#F2A3A3', k: 'fleisch hack hähnchen haehnchen huhn hühnchen pute rind schwein steak schnitzel wurst würstchen salami schinken speck bacon aufschnitt leberwurst bratwurst frikadelle gulasch filet lachs fisch garnelen shrimps forelle hering kassler mett chorizo gyros' },
+    { id: 'tk', name: 'Tiefkühl', c: '#A9E4F2', k: 'tiefkühl =tk pizza pommes =eis eiscreme fischstäbchen kroketten rahmspinat erbsen' },
+    { id: 'vorrat', name: 'Nudeln, Reis & Konserven', c: '#F2C94C', k: 'nudeln spaghetti penne fusilli farfalle pasta lasagneplatten reis couscous bulgur quinoa linsen kichererbsen bohnen dose konserve tomatenmark passierte tomaten gehackte tomaten tomatensoße soße sauce ketchup senf mayo mayonnaise brühe fond suppe mais oliven pesto thunfisch kokosmilch sojasoße apfelmus gurken im glas' },
+    { id: 'backen', name: 'Backen, Gewürze & Öl', c: '#F29E6B', k: 'mehl zucker backpulver hefe vanillezucker puderzucker speisestärke =öl olivenöl rapsöl sonnenblumenöl essig salz pfeffer gewürz paprikapulver curry zimt oregano muskat backmischung gelatine mandeln nüsse walnüsse haselnüsse rosinen' },
+    { id: 'fruehstueck', name: 'Frühstück & Kaffee', c: '#C9A27A', k: 'kaffee espresso =tee teebeutel kakao müsli muesli haferflocken cornflakes marmelade konfitüre honig nutella nuss-nougat erdnussbutter zwieback' },
+    { id: 'suess', name: 'Süßes & Snacks', c: '#F4A7B9', k: 'schokolade schoki chips kekse keks butterkeks gummibär gummibärchen bonbons kaugummi popcorn salzstangen cracker riegel praline lakritz waffeln süßigkeiten snacks erdnüsse studentenfutter' },
+    { id: 'getraenke', name: 'Getränke', c: '#6FD3B8', k: 'wasser mineralwasser sprudel saft apfelsaft orangensaft schorle cola limo limonade fanta sprite bier radler wein sekt prosecco sirup eistee energy smoothie' },
+    { id: 'drogerie', name: 'Drogerie', c: '#C3A6F2', k: 'zahnpasta zahncreme zahnbürste zahnseide shampoo spülung duschgel seife deo creme bodylotion rasier klopapier toilettenpapier taschentücher tempo wattepads wattestäbchen binden tampons windeln feuchttücher sonnencreme haargel haarspray pflaster tabletten vitamin kosmetik' },
+    { id: 'haushalt', name: 'Haushalt & Putzen', c: '#B6C2D9', k: 'spülmittel spülmaschinentabs spültabs tabs waschmittel weichspüler müllbeutel müllsäcke alufolie frischhaltefolie backpapier küchenrolle küchenpapier schwamm schwämme putzmittel reiniger glasreiniger entkalker batterien glühbirne kerzen servietten gefrierbeutel kaffeefilter allzweck lappen streichhölzer feuerzeug' },
+    { id: 'sonst', name: 'Sonstiges', c: '#93A3C6', k: '' }
+  ];
+  var SECTION_BY = {};
+  SECTIONS.forEach(function(sec){ SECTION_BY[sec.id] = sec; });
+  // Schlüsselwörter einmal vorbereiten: [Wort, Abschnitt, nur ganzes Wort]
+  var SECTION_WORDS = [];
+  SECTIONS.forEach(function(sec){
+    // mehrteilige Begriffe wie „crème fraîche“ bleiben zusammen
+    (sec.k.match(/passierte tomaten|gehackte tomaten|crème fraîche|creme fraiche|frische nudeln|rote bete|gurken im glas|\S+/g) || []).forEach(function(w){
+      SECTION_WORDS.push(w.charAt(0) === '=' ? [w.slice(1), sec.id, true] : [w, sec.id, false]);
+    });
+  });
+  function sectionOf(text){
+    var t = String(text).toLowerCase().replace(/\s+/g, ' ').trim();
+    var learned = shop && shop.learned && shop.learned[t];
+    if (learned && SECTION_BY[learned]) return learned;
+    var best = null, bestLen = 0;
+    SECTION_WORDS.forEach(function(x){
+      if (x[0].length <= bestLen) return;
+      var i = t.indexOf(x[0]);
+      if (i < 0) return;
+      if (x[2]){
+        var before = t.charAt(i - 1), after = t.charAt(i + x[0].length);
+        if (/[a-zäöüß]/.test(before) || /[a-zäöüß]/.test(after)) return;
+      }
+      best = x[1]; bestLen = x[0].length;
+    });
+    return best || 'sonst';
+  }
   function shopReq(method, body){
     var key = getKey();
     if (!key) return Promise.reject(new Error('nokey'));
@@ -1583,12 +1651,27 @@ html.compact .subhead .seg{order:2;width:100%}
     var items = shop ? shop.items : [];
     var open = items.filter(function(x){ return !x.done; }), done = items.filter(function(x){ return x.done; });
     $('shopBadge').hidden = !open.length; $('shopBadge').textContent = open.length;
-    $('shopList').innerHTML = !shop ? '' : !items.length ? '<div style="font-size:19px;color:var(--soft);grid-column:span 2;padding:10px 4px">Die Liste ist leer.</div>' :
-      open.concat(done).map(function(x){
-        return '<button class="item' + (x.done ? ' done' : '') + '" type="button" data-shop="' + esc(x.id) + '"><span class="box">' +
-          (x.done ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>' : '') +
-          '</span><span>' + esc(x.text) + '</span></button>';
-      }).join('');
+    var itemHtml = function(x){
+      return '<button class="item' + (x.done ? ' done' : '') + '" type="button" data-shop="' + esc(x.id) + '"><span class="box">' +
+        (x.done ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E2A14" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>' : '') +
+        '</span><span>' + esc(x.text) + '</span></button>';
+    };
+    var head = function(sec, extra){ return '<div class="shophead" style="--c:' + sec.c + '"><span class="dot"></span>' + esc(sec.name) + (extra || '') + '</div>'; };
+    // Offene Einträge nach Abschnitten des Supermarkts gruppiert, Erledigte gesammelt am Ende
+    var groups = {};
+    open.forEach(function(x){ var c = sectionOf(x.text); (groups[c] = groups[c] || []).push(x); });
+    var html = '';
+    SECTIONS.forEach(function(sec){
+      if (!groups[sec.id]) return;
+      var assign = sec.id === 'sonst' && !shopEdit ? '<button type="button" class="linkbtn" data-shopedit="1">Zuordnen</button>' : '';
+      html += head(sec, assign) + groups[sec.id].map(itemHtml).join('');
+    });
+    if (done.length) html += head({ name: 'Erledigt', c: 'var(--tile2)' }) + done.map(itemHtml).join('');
+    $('shopList').innerHTML = !shop ? '' : !items.length ? '<div style="font-size:19px;color:var(--soft);grid-column:span 2;padding:10px 4px">Die Liste ist leer.</div>' : html;
+    $('shopList').classList.toggle('editing', shopEdit);
+    $('shopEdit').textContent = shopEdit ? 'Fertig' : 'Abschnitte ändern';
+    $('shopEdit').hidden = !open.length && !shopEdit;
+    $('shopHint').textContent = shopEdit ? 'Artikel antippen, um den Abschnitt zu ändern' : '';
     var onList = {}; items.forEach(function(x){ onList[x.text.toLowerCase()] = true; });
     var rec = (shop ? shop.recent : []).filter(function(t){ return !onList[t.toLowerCase()]; }).slice(0, 18);
     $('shopRecent').innerHTML = rec.length ? rec.map(function(t){ return '<button type="button" data-readd="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') :
@@ -1604,9 +1687,35 @@ html.compact .subhead .seg{order:2;width:100%}
     shopDo({ op: 'add', text: t });
   });
   $('shopList').addEventListener('click', function(e){
+    if (e.target.closest && e.target.closest('[data-shopedit]')){ shopEdit = true; renderShop(); return; }
     var b = e.target.closest ? e.target.closest('[data-shop]') : null;
-    if (b) shopDo({ op: 'toggle', id: b.getAttribute('data-shop') });
+    if (!b) return;
+    if (shopEdit){
+      var it = (shop ? shop.items : []).filter(function(x){ return x.id === b.getAttribute('data-shop'); })[0];
+      if (it) openCat(it.text);
+      return;
+    }
+    shopDo({ op: 'toggle', id: b.getAttribute('data-shop') });
   });
+  $('shopEdit').addEventListener('click', function(){ shopEdit = !shopEdit; renderShop(); });
+  function openCat(text){
+    catFor = text;
+    var cur = sectionOf(text), learned = shop && shop.learned && shop.learned[text.toLowerCase().replace(/\s+/g, ' ').trim()];
+    $('catTitle').textContent = '„' + text + '“ gehört zu …';
+    $('catGrid').innerHTML = SECTIONS.map(function(sec){
+      return '<button type="button" data-cat="' + sec.id + '" aria-pressed="' + (sec.id === cur) + '" style="--c:' + sec.c + '"><span class="dot"></span>' + esc(sec.name) + '</button>';
+    }).join('') + (learned ? '<button type="button" data-cat="auto" style="--c:transparent"><span class="dot"></span>Automatisch erkennen</button>' : '');
+    $('catSheet').hidden = false;
+  }
+  function closeCat(){ $('catSheet').hidden = true; catFor = null; }
+  $('catGrid').addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-cat]') : null;
+    if (!b || !catFor) return;
+    shopDo({ op: 'learn', text: catFor, cat: b.getAttribute('data-cat') });
+    closeCat();
+  });
+  $('catCancel').addEventListener('click', closeCat);
+  $('catSheet').addEventListener('click', function(e){ if (e.target === this) closeCat(); });
   $('shopRecent').addEventListener('click', function(e){
     var b = e.target.closest ? e.target.closest('[data-readd]') : null;
     if (b) shopDo({ op: 'add', text: b.getAttribute('data-readd') });

@@ -15,6 +15,7 @@
  * GET /climate → Temperatur und Luftfeuchte des Govee-Thermometers.
  * GET /list/einkauf → Einkaufsliste aus dem gemeinsamen Speicher (KV "DATA")
  * POST /list/einkauf  {op:"add",text} | {op:"addMany",texts} | {op:"toggle",id} | {op:"remove",id} | {op:"clearDone"}
+ *                      | {op:"learn",text,cat} – Abschnitt im Supermarkt für einen Artikel merken (cat "auto" vergisst ihn)
  * GET /meter → Zählerstände und Tarif
  * POST /meter  {op:"add",date,strom,gas} | {op:"removeLast"} | {op:"import",readings} | {op:"tariff",kind,grund,arbeit,abschlag,start,faktor?}
  * GET /notes → Zettel der Pinnwand
@@ -468,6 +469,9 @@ async function readBody(request, limit) {
   if (raw.length > limit) throw new Error('too large');
   return JSON.parse(raw);
 }
+// Abschnitte im Supermarkt (Kennungen müssen zum Dashboard passen)
+const SHOP_SECTIONS = ['obst', 'brot', 'kuehl', 'fleisch', 'tk', 'vorrat', 'backen', 'fruehstueck', 'suess', 'getraenke', 'drogerie', 'haushalt', 'sonst'];
+const MAX_LEARNED = 300;
 async function list(request, env, reply, name) {
   if (!env.DATA) return reply(500, { error: 'not configured' });
   const key = 'list:' + name;
@@ -514,6 +518,16 @@ async function list(request, env, reply, name) {
   } else if (body.op === 'clearDone') {
     items.filter(x => x.done).forEach(x => remember(x.text));
     data.items = items.filter(x => !x.done);
+  } else if (body.op === 'learn') {
+    const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT).toLowerCase();
+    const cat = String(body.cat || '');
+    if (!text || (cat !== 'auto' && !SHOP_SECTIONS.includes(cat))) return reply(400, { error: 'bad request' });
+    const learned = data.learned || {};
+    delete learned[text];
+    if (cat !== 'auto') learned[text] = cat;
+    const keys = Object.keys(learned);
+    if (keys.length > MAX_LEARNED) keys.slice(0, keys.length - MAX_LEARNED).forEach(k => delete learned[k]); // älteste zuerst vergessen
+    data.learned = learned;
   } else {
     return reply(400, { error: 'unknown op' });
   }
