@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Zuhause</title>
-<meta name="build" content="2026-10-13T22:41:51">
+<meta name="build" content="2026-10-13T22:44:25">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -2420,7 +2420,8 @@ html.compact .subhead .seg{order:2;width:100%}
   function pushFail(e){
     var m = e && e.message;
     pushSay(m === 'denied' ? 'Mitteilungen sind für „Zuhause“ nicht erlaubt. Das lässt sich in den Einstellungen des Geräts unter „Mitteilungen“ ändern.' :
-      m === 'nokey' ? 'Bitte zuerst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Der Zugangsschlüssel stimmt nicht.' : 'Das hat gerade nicht geklappt. Bitte später nochmal versuchen.');
+      m === 'nokey' ? 'Bitte zuerst den Zugangsschlüssel eintragen.' : m === 'auth' ? 'Der Zugangsschlüssel stimmt nicht.' : m === 'timeout' ? 'Das Gerät hat nicht geantwortet (Hintergrunddienst nicht bereit). Bitte die App schließen, neu öffnen und nochmal versuchen.' :
+      'Das hat nicht geklappt (' + ((e && e.name) || 'Fehler') + ': ' + (m || '?') + ').');
   }
   function hourOptions(sel, from, to){
     var h = '';
@@ -2442,7 +2443,7 @@ html.compact .subhead .seg{order:2;width:100%}
     $('pushMorning').value = String(pushPrefs.morning); $('pushEvening').value = String(pushPrefs.evening);
   }
   function refreshPush(){
-    pushSay('');
+    pushSay(pushSupported() && 'Notification' in window && Notification.permission === 'denied' ? 'Mitteilungen sind für „Zuhause“ in den Geräte-Einstellungen ausgeschaltet.' : '');
     if (!pushSupported() || !pushSub || !getKey()){ renderPush(); return; }
     pushReq('POST', { op: 'status', endpoint: pushSub.endpoint }).then(function(d){ pushPrefs = d.subscribed ? d.prefs : null; renderPush(); }).catch(function(){ renderPush(); });
   }
@@ -2461,7 +2462,8 @@ html.compact .subhead .seg{order:2;width:100%}
     // Die Erlaubnis muss direkt beim Antippen erfragt werden (sonst lehnt iOS ab)
     Notification.requestPermission().then(function(p){
       if (p !== 'granted') throw new Error('denied');
-      return Promise.all([navigator.serviceWorker.ready, pushReq('GET')]);
+      var ready = Promise.race([navigator.serviceWorker.ready, new Promise(function(res, rej){ setTimeout(function(){ rej(new Error('timeout')); }, 10000); })]);
+      return Promise.all([ready, pushReq('GET')]);
     }).then(function(x){
       var reg = x[0]; pushReg = reg;
       return reg.pushManager.getSubscription().then(function(old){ return old ? old.unsubscribe() : null; }).then(function(){
